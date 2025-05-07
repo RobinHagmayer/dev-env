@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+fonts_dir="${HOME}/.local/share/fonts"
+
+if [[ ! -d "$fonts_dir" ]]; then
+  mkdir -p "$fonts_dir"
+fi
+
+version="v3.4.0"
+archive_file="Meslo.tar.xz"
+download_url="https://github.com/ryanoasis/nerd-fonts/releases/download/${version}/${archive_file}"
+
+wget "$download_url"
+tar -xaf "$archive_file" -C "$fonts_dir" --overwrite
+rm "$archive_file"
+
+fc-cache -fv
