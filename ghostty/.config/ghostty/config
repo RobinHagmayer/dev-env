@@ -1,0 +1,6 @@
+# This is the configuration file for Ghostty.
+
+font-family = "MesloLGS Mono"
+font-size = 14
+maximize
+command = "fish"
