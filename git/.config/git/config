@@ -1,0 +1,7 @@
+[user]
+	name = Robin Hagmayer
+	email = robin.hagmayer@proton.me
+[init]
+	defaultBranch = main
+[core]
+	autocrlf = input
