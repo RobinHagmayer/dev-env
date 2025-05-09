@@ -22,26 +22,26 @@ require("config.autocmds")
 
 -- Setup lazy.nvim
 require("lazy").setup({
-    spec = {
-        { import = "plugins" },
+  spec = {
+    { import = "plugins" },
+  },
+  -- Configure any other settings here. See the documentation for more details.
+  ui = { border = "rounded" },
+  -- None of my plugins use luarocks so disable this.
+  rocks = {
+    enabled = false,
+  },
+  performance = {
+    rtp = {
+      -- Stuff I don't use.
+      disabled_plugins = {
+        "gzip",
+        "rplugin",
+        "tarPlugin",
+        "tohtml",
+        "tutor",
+        "zipPlugin",
+      },
     },
-    -- Configure any other settings here. See the documentation for more details.
-    ui = { border = "rounded" },
-    -- None of my plugins use luarocks so disable this.
-    rocks = {
-        enabled = false,
-    },
-    performance = {
-        rtp = {
-            -- Stuff I don't use.
-            disabled_plugins = {
-                'gzip',
-                'rplugin',
-                'tarPlugin',
-                'tohtml',
-                'tutor',
-                'zipPlugin',
-            },
-        },
-    },
+  },
 })
