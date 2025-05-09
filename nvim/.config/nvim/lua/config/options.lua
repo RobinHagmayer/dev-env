@@ -35,6 +35,10 @@ opt.cursorline = true
 opt.updatetime = 250
 opt.timeoutlen = 350 -- Time to wait for completion of a keymap
 
+-- Show certain whitespace characters
+vim.opt.list = true
+vim.opt.listchars = { nbsp = '␣', trail = '⋅', tab = '  ↦' }
+
 -- Backup and Swap files
 opt.backup = false
 opt.swapfile = false
