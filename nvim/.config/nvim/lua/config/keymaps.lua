@@ -1,7 +1,13 @@
 local map = vim.keymap.set
 
+-- Set leader keys
+vim.g.mapleader = " "
+vim.g.maplocalleader = " "
+
+-- Better map for returning from insert mode
 map("i", "jk", "<Esc>", { noremap = true })
 
+-- Map for seach highlight clear
 map("n", "<Esc>", "<Cmd>nohlsearch<CR>", { desc = "Clear search highlighting" })
 
 -- Disable arrow keys.

@@ -1,11 +1,3 @@
-vim.g.mapleader = " "
-vim.g.maplocalleader = " "
-
--- Load core configs
-require("config.options")
-require("config.keymaps")
-require("config.autocmds")
-
 -- Bootstrap lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
@@ -23,10 +15,33 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
+-- Load core configs
+require("config.options")
+require("config.keymaps")
+require("config.autocmds")
+
 -- Setup lazy.nvim
 require("lazy").setup({
-  spec = {
-    { import = "plugins" },
-  },
-  -- Configure any other settings here. See the documentation for more details.
+    spec = {
+        { import = "plugins" },
+    },
+    -- Configure any other settings here. See the documentation for more details.
+    ui = { border = "rounded" },
+    -- None of my plugins use luarocks so disable this.
+    rocks = {
+        enabled = false,
+    },
+    performance = {
+        rtp = {
+            -- Stuff I don't use.
+            disabled_plugins = {
+                'gzip',
+                'rplugin',
+                'tarPlugin',
+                'tohtml',
+                'tutor',
+                'zipPlugin',
+            },
+        },
+    },
 })
