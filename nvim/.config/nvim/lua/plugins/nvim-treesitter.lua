@@ -1,26 +1,38 @@
 return {
   "nvim-treesitter/nvim-treesitter",
   build = ":TSUpdate",
-  main = "nvim-treesitter.configs", -- Sets main module to use for opts
-  opts = {
-    ensure_installed = {
+  config = function()
+    local ensure_installed = {
+      "astro",
       "bash",
       "c",
+      "cpp",
+      "css",
       "diff",
       "go",
       "html",
       "java",
+      "javascript",
       "lua",
       "luadoc",
       "markdown",
       "markdown_inline",
       "python",
       "query",
+      "tsx",
+      "typescript",
       "vim",
       "vimdoc",
-    },
-    sync_install = false,
-    highlight = { enable = true },
-    indent = { enable = true },
-  },
+    }
+
+    require("nvim-treesitter.configs").setup({
+      ensure_installed = ensure_installed,
+      sync_install = false,
+      highlight = {
+        enable = true,
+        additional_vim_regex_highlighting = false,
+      },
+      indent = { enable = true },
+    })
+  end,
 }
