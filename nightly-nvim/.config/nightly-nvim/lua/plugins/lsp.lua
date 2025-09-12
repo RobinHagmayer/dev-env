@@ -12,6 +12,8 @@ require("mason-tool-installer").setup({
     "stylua", -- Lua formatter
     "lua_ls", -- Lua language server
     "gopls", -- Go language server
+    "pyright", -- Python language server
+    "ruff", -- Python language server (linting, formatting and organizing imports)
   },
   auto_update = false,
   run_on_start = true,
@@ -43,21 +45,45 @@ vim.lsp.config("lua_ls", {
   },
 })
 
+vim.lsp.config("pyright", {
+  settings = {
+    pyright = {
+      -- Using Ruff's import organizer
+      disableOrganizeImports = true,
+    },
+    python = {
+      analysis = {
+        -- Ignore all files for analysis to exclusively use Ruff for linting
+        ignore = { "*" },
+      },
+    },
+  },
+})
+
 -- LspAttach keymaps
 vim.api.nvim_create_autocmd(
   "LspAttach",
   { --  Use LspAttach autocommand to only map the following keys after the language server attaches to the current buffer
     group = vim.api.nvim_create_augroup("RobinLspConfig", {}),
-    callback = function(ev)
-      vim.bo[ev.buf].omnifunc = "v:lua.vim.lsp.omnifunc" -- Enable completion triggered by <c-x><c-o>
-
-      local opts = { buffer = ev.buf }
+    callback = function(args)
+      -- Set keymaps
+      local opts = { buffer = args.buf }
       vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
       vim.keymap.set("n", "<leader>d", function()
         vim.diagnostic.open_float({
           border = "rounded",
         })
       end, opts)
+
+      local client = vim.lsp.get_client_by_id(args.data.client_id)
+      if client == nil then
+        return
+      end
+
+      -- Disable hover from Ruff
+      if client.name == "ruff" then
+        client.server_capabilities.hoverProvider = false
+      end
     end,
   }
 )
