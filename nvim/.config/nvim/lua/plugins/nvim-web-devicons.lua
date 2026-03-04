@@ -1,5 +1,1 @@
-return {
-  "nvim-tree/nvim-web-devicons",
-  lazy = true,
-  opts = {},
-}
+vim.pack.add({ "https://github.com/nvim-tree/nvim-web-devicons" })

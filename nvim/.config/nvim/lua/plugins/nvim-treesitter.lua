@@ -1,40 +1,35 @@
-return {
-  "nvim-treesitter/nvim-treesitter",
-  branch = "master",
-  lazy = false,
-  build = ":TSUpdate",
-  config = function()
-    local ensure_installed = {
-      "astro",
-      "bash",
-      "c",
-      "cpp",
-      "css",
-      "diff",
-      "go",
-      "html",
-      "java",
-      "javascript",
-      "lua",
-      "luadoc",
-      "markdown",
-      "markdown_inline",
-      "python",
-      "query",
-      "tsx",
-      "typescript",
-      "vim",
-      "vimdoc",
-    }
+vim.pack.add({
+  {
+    src = "https://github.com/nvim-treesitter/nvim-treesitter",
+    version = "main"
+  }
+})
 
-    require("nvim-treesitter.configs").setup({
-      ensure_installed = ensure_installed,
-      sync_install = false,
-      highlight = {
-        enable = true,
-        additional_vim_regex_highlighting = false,
-      },
-      indent = { enable = true },
-    })
-  end,
+vim.api.nvim_create_autocmd('PackChanged', {
+  group = vim.api.nvim_create_augroup('treesitter-pack-events', { clear = true }),
+  callback = function(ev)
+    if ev.data.spec.name == 'nvim-treesitter' and (ev.data.kind == 'update' or ev.data.kind == 'install') then
+      vim.cmd('TSUpdate')
+    end
+  end
+})
+
+local languages = {
+  "lua",
+  "go",
+  "python",
 }
+
+require("nvim-treesitter").install(languages)
+
+vim.api.nvim_create_autocmd('FileType', {
+  group = vim.api.nvim_create_augroup('treesitter-start-highlight', { clear = true }),
+  pattern = languages,
+  callback = function()
+    vim.treesitter.start()
+
+    vim.wo[0][0].foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+    vim.wo[0][0].foldmethod = 'expr'
+    vim.wo[0][0].foldlevel = 999
+  end,
+})
