@@ -12,9 +12,43 @@ require("mason-tool-installer").setup({
     "stylua", -- Lua formatter
     "lua_ls", -- Lua language server
     "gopls", -- Go language server
+    "ruff", -- Python linter and format lsp
+    "ty", -- Python type checking lsp
   },
   auto_update = false,
   run_on_start = true,
+})
+
+local function split_python_lsp_capabilities(bufnr)
+  local ruff_client = nil
+  local ty_client = nil
+
+  for _, client in ipairs(vim.lsp.get_clients({ bufnr = bufnr })) do
+    if client.name == "ruff" then
+      ruff_client = client
+    elseif client.name == "ty" then
+      ty_client = client
+    end
+  end
+
+  if ruff_client ~= nil and ty_client ~= nil then
+    ruff_client.server_capabilities.hoverProvider = false
+    ty_client.server_capabilities.documentFormattingProvider = false
+    ty_client.server_capabilities.documentRangeFormattingProvider = false
+    ty_client.server_capabilities.documentOnTypeFormattingProvider = false
+  end
+end
+
+vim.lsp.config("ruff", {
+  on_attach = function(_, bufnr)
+    split_python_lsp_capabilities(bufnr)
+  end,
+})
+
+vim.lsp.config("ty", {
+  on_attach = function(_, bufnr)
+    split_python_lsp_capabilities(bufnr)
+  end,
 })
 
 vim.lsp.config("lua_ls", {
