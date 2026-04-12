@@ -15,7 +15,8 @@ Personal Neovim config built on Neovim 0.12's native package management. No plug
 │   └── plugins/
 │       ├── lsp.lua                LSP setup, Mason, keymaps
 │       ├── nvim-treesitter.lua    Treesitter parsing and folding
-│       ├── completions.lua        Autocompletion
+│   ├── completions.lua        Autocompletion
+│       ├── fff.lua                Fuzzy file finder and live grep
 │       ├── nvim-web-devicons.lua  Icon support
 │       └── colorscheme.lua        Kanagawa theme
 ├── after/ftplugin/                Per-language overrides (indentation)
@@ -35,6 +36,7 @@ Personal Neovim config built on Neovim 0.12's native package management. No plug
 | [blink.cmp](https://github.com/saghen/blink.cmp) | Autocompletion | Fuzzy matching with frecency, multi-source (LSP/path/snippets/buffer), signature help, cmdline completion — much richer than mini.completion or built-in `vim.lsp.completion` |
 | [lspkind-nvim](https://github.com/onsails/lspkind-nvim) | LSP kind icons | Provides Nerd Font symbols for blink.cmp's completion kinds (Function, Variable, etc.) |
 | [nvim-web-devicons](https://github.com/nvim-tree/nvim-web-devicons) | File icons | Used by blink.cmp for Path completion icons |
+| [fff.nvim](https://github.com/dmtrKovalenko/fff.nvim) | Fuzzy file finder and live grep | Typo-resistant fuzzy matching with frecency, git status, and constraint filtering (glob, `git:modified`, `!exclude`). Uses a Rust core (zlob) for speed — prebuilt binary auto-downloads on install |
 | [kanagawa.nvim](https://github.com/rebelot/kanagawa.nvim) | Color scheme | This is my personal favorite colorscheme right now! |
 
 ## Architecture Decisions
@@ -54,6 +56,9 @@ Blink.cmp auto-downloads a prebuilt Rust binary (frizbee) from GitHub releases w
 
 ### blink.cmp auto-injects LSP capabilities
 Blink.cmp's plugin file detects Neovim 0.11+ (`vim.lsp.config`) and auto-merges `get_lsp_capabilities()` into the wildcard LSP config. No manual capability setup needed in `lsp.lua`.
+
+### fff.nvim Rust binary auto-download
+Similar to blink.cmp, fff.nvim uses a Rust binary (zlob) for fast file indexing, globbing, and fuzzy matching. The prebuilt binary auto-downloads from GitHub releases via `PackChanged` when the plugin is installed or updated. No Rust toolchain needed.
 
 ### No swap files, no backups
 Using `undofile` instead — persistent undo across sessions without the noise of `.swp` and `~` backup files cluttering the filesystem.
