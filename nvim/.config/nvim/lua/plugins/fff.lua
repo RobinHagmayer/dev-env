@@ -22,6 +22,7 @@ vim.api.nvim_create_autocmd("PackChanged", {
 -- Lazy-sync: only start file indexing when the picker is opened (faster startup)
 vim.g.fff = {
   lazy_sync = true,
+  prompt = "󰍉  ", -- nf-md-magnify (\udb80\udf49)
 }
 
 vim.keymap.set("n", "<leader>ff", function()
