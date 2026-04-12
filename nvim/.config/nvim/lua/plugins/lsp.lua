@@ -9,16 +9,19 @@ require("mason").setup()
 require("mason-lspconfig").setup({})
 require("mason-tool-installer").setup({
   ensure_installed = {
-    "stylua", -- Lua formatter
+    "stylua", -- Lua formatter (also used by StyLua to format this config)
     "lua_ls", -- Lua language server
     "gopls", -- Go language server
     "ruff", -- Python linter and format lsp
     "ty", -- Python type checking lsp
   },
-  auto_update = false,
+  auto_update = false, -- Don't auto-update on startup to avoid silent breaking changes
   run_on_start = true,
 })
 
+-- When both ruff and ty are attached to a Python buffer, they overlap on
+-- hover and formatting. Downscope ruff (hover off) and ty (formatting off)
+-- so each server only handles what it's best at.
 local function split_python_lsp_capabilities(bufnr)
   local ruff_client = nil
   local ty_client = nil
@@ -83,7 +86,7 @@ vim.api.nvim_create_autocmd(
   { --  Use LspAttach autocommand to only map the following keys after the language server attaches to the current buffer
     group = vim.api.nvim_create_augroup("lsp-attach-config", {}),
     callback = function(args)
-      -- Set keymaps
+      -- Buffer-local keymaps so they only apply when an LSP is active
       local opts = { buffer = args.buf }
       vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
       vim.keymap.set("n", "<leader>d", function()

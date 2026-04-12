@@ -1,10 +1,11 @@
 vim.pack.add({
   {
     src = "https://github.com/nvim-treesitter/nvim-treesitter",
-    version = "main"
-  }
+    version = "main" -- Track main branch for latest parser and query updates
+  },
 })
 
+-- Keep parsers in sync when the plugin is updated or installed
 vim.api.nvim_create_autocmd('PackChanged', {
   group = vim.api.nvim_create_augroup('treesitter-pack-events', { clear = true }),
   callback = function(ev)
@@ -21,7 +22,7 @@ local languages = {
 }
 
 require'nvim-treesitter'.setup {
-  -- Directory to install parsers and queries to (prepended to `runtimepath` to have priority)
+  -- Install to site dir so parsers survive config resets
   install_dir = vim.fn.stdpath('data') .. '/site'
 }
 require("nvim-treesitter").install(languages)

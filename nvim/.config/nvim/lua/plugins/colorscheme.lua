@@ -4,7 +4,7 @@ vim.pack.add({
 
 -- Setup color theme
 require("kanagawa").setup({
-  -- Changes themes
+  -- Transparent gutter background so it blends with the editor bg
   colors = {
     theme = {
       all = {
@@ -14,7 +14,7 @@ require("kanagawa").setup({
       },
     },
   },
-  -- Changes colors
+  -- Make end-of-buffer tilde match the non-text color (less visually noisy)
   overrides = function(colors)
     local theme = colors.theme
     return {
