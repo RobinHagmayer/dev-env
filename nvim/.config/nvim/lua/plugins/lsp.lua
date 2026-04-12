@@ -14,6 +14,7 @@ require("mason-tool-installer").setup({
     "gopls", -- Go language server
     "ruff", -- Python linter and format lsp
     "ty", -- Python type checking lsp
+    "tsgo", -- Typescript language server
   },
   auto_update = false, -- Don't auto-update on startup to avoid silent breaking changes
   run_on_start = true,
