@@ -2,6 +2,41 @@
 
 Personal Neovim config built on Neovim 0.12's native package management. No plugin manager dependency.
 
+## Dependencies
+
+### Required
+
+| Dependency | Why | Used by |
+|---|---|---|
+| **Git** | Plugin versioning, `vim.pack` clones | vim.pack, blink.cmp version detection, fff.nvim version detection |
+| **curl** | Downloading prebuilt binaries | blink.cmp (frizbee fuzzy matcher), fff.nvim (zlob core) |
+| **Go** | Installing gopls | gopls (via mason) |
+| **Node.js / npm** | Installing TypeScript server | tsgo (via mason) |
+| **Python 3 / pip** | Installing ty type checker | ty (via mason) |
+| **A Nerd Font** | Icons in blink.cmp completion menu and fff.nvim | blink.cmp (`nerd_font_variant = "mono"`), fff.nvim, lspkind |
+| **Clipboard provider** | System clipboard integration (`unnamedplus`) | Neovim `clipboard=unnamedplus` — needs xclip/xsel (X11) or wl-copy (Wayland) |
+
+### Optional
+
+| Dependency | Why | Used by |
+|---|---|---|
+| **ripgrep (rg)** | Live grep in fff.nvim | `fff.live_grep()` — falls back to other grep implementations if unavailable |
+| **rst2pdf** | Treesitter PDF rendering | Not currently used, but some treesitter features expect it |
+| **Rust toolchain** | Building binaries from source | Only needed if prebuilt binary download fails; blink.cmp and fff.nvim fall back to Lua or `cargo build` respectively |
+
+### Mason-managed tools (auto-installed)
+
+These are installed by `mason-tool-installer` on first launch and don't need manual setup — but their **runtime dependencies** (listed above) must be present:
+
+| Tool | Type | Runtime dependency |
+|---|---|---|
+| stylua | Prebuilt binary | None |
+| lua_ls | Prebuilt binary | None |
+| gopls | Go binary | **Go** |
+| ruff | Prebuilt binary | None |
+| ty | Python package | **Python 3 / pip** |
+| tsgo | npm package | **Node.js / npm** |
+
 ## Directory Structure
 
 ```
@@ -15,7 +50,7 @@ Personal Neovim config built on Neovim 0.12's native package management. No plug
 │   └── plugins/
 │       ├── lsp.lua                LSP setup, Mason, keymaps
 │       ├── nvim-treesitter.lua    Treesitter parsing and folding
-│   ├── completions.lua        Autocompletion
+│   ├── completions.lua            Autocompletion
 │       ├── fff.lua                Fuzzy file finder and live grep
 │       ├── nvim-web-devicons.lua  Icon support
 │       └── colorscheme.lua        Kanagawa theme
