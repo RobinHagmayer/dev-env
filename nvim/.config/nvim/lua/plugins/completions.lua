@@ -4,6 +4,7 @@
 -- a prebuilt binary when pinned to a release tag — no manual steps on new machines.
 vim.pack.add({
   { src = "https://github.com/saghen/blink.cmp", version = vim.version.range(">=1.0") },
+  { src = "https://github.com/onsails/lspkind-nvim", name = "lspkind" },
 })
 
 ---@module 'blink.cmp'
@@ -18,8 +19,39 @@ require("blink.cmp").setup({
   },
 
   completion = {
-    -- Only show docs when manually triggered (C-space)
-    documentation = { auto_show = false },
+    -- Always show docs when a completion item is selected
+    documentation = { auto_show = true, auto_show_delay_ms = 250 },
+    menu = {
+      draw = {
+        components = {
+          -- Use lspkind icons for LSP kinds, nvim-web-devicons for Path completions
+          kind_icon = {
+            text = function(ctx)
+              local icon = ctx.kind_icon
+              if vim.tbl_contains({ "Path" }, ctx.source_name) then
+                local dev_icon, _ = require("nvim-web-devicons").get_icon(ctx.label)
+                if dev_icon then
+                  icon = dev_icon
+                end
+              else
+                icon = require("lspkind").symbol_map[ctx.kind] or ""
+              end
+              return icon .. ctx.icon_gap
+            end,
+            highlight = function(ctx)
+              local hl = ctx.kind_hl
+              if vim.tbl_contains({ "Path" }, ctx.source_name) then
+                local _, dev_hl = require("nvim-web-devicons").get_icon(ctx.label)
+                if dev_hl then
+                  hl = dev_hl
+                end
+              end
+              return hl
+            end,
+          },
+        },
+      },
+    },
   },
 
   sources = {

@@ -33,7 +33,8 @@ Personal Neovim config built on Neovim 0.12's native package management. No plug
 | [mason-tool-installer.nvim](https://github.com/WhoIsSethDaniel/mason-tool-installer.nvim) | Auto-install non-LSP tools | Mason-lspconfig only handles LSP servers; this handles formatters/linters (e.g., stylua) |
 | [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) | Syntax highlighting and folding | Neovim's built-in treesitter API requires per-language queries; this bundles them |
 | [blink.cmp](https://github.com/saghen/blink.cmp) | Autocompletion | Fuzzy matching with frecency, multi-source (LSP/path/snippets/buffer), signature help, cmdline completion — much richer than mini.completion or built-in `vim.lsp.completion` |
-| [nvim-web-devicons](https://github.com/nvim-tree/nvim-web-devicons) | File icons | <!-- TODO: which plugins consume these icons? blink.cmp has its own kind icons -->
+| [lspkind-nvim](https://github.com/onsails/lspkind-nvim) | LSP kind icons | Provides Nerd Font symbols for blink.cmp's completion kinds (Function, Variable, etc.) |
+| [nvim-web-devicons](https://github.com/nvim-tree/nvim-web-devicons) | File icons | Used by blink.cmp for Path completion icons |
 | [kanagawa.nvim](https://github.com/rebelot/kanagawa.nvim) | Color scheme | This is my personal favorite colorscheme right now! |
 
 ## Architecture Decisions
