@@ -19,6 +19,19 @@ local languages = {
   "lua",
   "go",
   "python",
+  "javascript",
+  "typescript",
+  "tsx",
+}
+
+local tree_sitter_filetypes = {
+  "lua",
+  "go",
+  "python",
+  "javascript",
+  "typescript",
+  "javascriptreact",
+  "typescriptreact",
 }
 
 require'nvim-treesitter'.setup {
@@ -29,7 +42,7 @@ require("nvim-treesitter").install(languages)
 
 vim.api.nvim_create_autocmd('FileType', {
   group = vim.api.nvim_create_augroup('treesitter-start-highlight', { clear = true }),
-  pattern = languages,
+  pattern = tree_sitter_filetypes,
   callback = function()
     vim.treesitter.start()
 
