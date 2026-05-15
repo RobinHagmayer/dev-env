@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Cache sudo credentials upfront so the password is only entered once.
+echo "Caching sudo credentials ..."
+sudo -v
+
+# 1. Remove old/conflicting Docker packages if any are installed.
+OLD_PKGS=$(dpkg --get-selections docker.io docker-compose docker-compose-v2 docker-doc podman-docker containerd runc 2>/dev/null | awk '$2 == "install" {print $1}' || true)
+if [[ -n "${OLD_PKGS}" ]]; then
+    echo "Removing conflicting Docker packages ..."
+    sudo apt remove -y ${OLD_PKGS}
+fi
+
+# 2. Add Docker's official GPG key and APT repository.
+echo "Updating package lists ..."
+sudo apt update
+sudo apt install -y ca-certificates curl
+
+echo "Adding Docker GPG key ..."
+sudo install -m 0755 -d /etc/apt/keyrings
+if [[ ! -f /etc/apt/keyrings/docker.asc ]]; then
+    sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+    sudo chmod a+r /etc/apt/keyrings/docker.asc
+fi
+
+echo "Adding Docker APT repository ..."
+if [[ ! -f /etc/apt/sources.list.d/docker.sources ]]; then
+    CODENAME=$(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+    ARCH=$(dpkg --print-architecture)
+    sudo tee /etc/apt/sources.list.d/docker.sources >/dev/null <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: ${CODENAME}
+Components: stable
+Architectures: ${ARCH}
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+    sudo apt update
+fi
+
+# 3. Install Docker.
+echo "Installing Docker ..."
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# 4. Verify Docker service is running.
+echo "Checking Docker service status ..."
+sudo systemctl status docker --no-pager
+
+# 5-7. Post-install: add user to docker group only if not already a member.
+if id -Gn "$USER" | grep -qw docker; then
+    echo ""
+    echo "User '$USER' is already in the 'docker' group."
+    echo "Docker is installed and ready."
+    echo ""
+    docker --version
+    exit 0
+fi
+
+echo "Creating docker group (if it doesn't exist) ..."
+sudo groupadd docker 2>/dev/null || true
+
+echo "Adding '$USER' to the docker group ..."
+sudo usermod -aG docker "$USER"
+
+echo "Activating docker group membership (run 'exit' to return to your previous shell) ..."
+exec newgrp docker

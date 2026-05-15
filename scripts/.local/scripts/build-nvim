@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+NVIM_SRC="${HOME}/.local/src/neovim"
+REF="master"
+
+# Parse arguments
+if [[ $# -gt 0 ]]; then
+  if [[ "$1" == "--tag" ]]; then
+    if [[ -z "${2:-}" ]]; then
+      echo "Usage: $0 [--tag <ref>]" >&2
+      exit 1
+    fi
+    REF="$2"
+  else
+    echo "Usage: $0 [--tag <ref>]" >&2
+    exit 1
+  fi
+fi
+
+# Ensure source directory exists
+if [[ ! -d "${NVIM_SRC}/.git" ]]; then
+  echo "Error: Neovim source not found at ${NVIM_SRC}" >&2
+  echo "Clone it first with:" >&2
+  echo "  git clone https://github.com/neovim/neovim.git ${NVIM_SRC}" >&2
+  exit 1
+fi
+
+echo "Fetching updates ..."
+git -C "${NVIM_SRC}" fetch origin --tags
+
+echo "Resetting repository state ..."
+git -C "${NVIM_SRC}" reset --hard
+git -C "${NVIM_SRC}" clean -fd
+
+echo "Checking out ${REF} ..."
+if [[ "${REF}" == "master" ]]; then
+  git -C "${NVIM_SRC}" checkout -B master origin/master
+else
+  git -C "${NVIM_SRC}" checkout --detach "${REF}"
+fi
+
+echo "Cleaning previous build artifacts ..."
+make -C "${NVIM_SRC}" distclean
+
+echo "Building neovim (RelWithDebInfo) ..."
+make -C "${NVIM_SRC}" CMAKE_BUILD_TYPE=RelWithDebInfo
+
+echo "Building DEB package ..."
+(cd "${NVIM_SRC}/build" && cpack -G DEB)
+
+DEB_FILE="${NVIM_SRC}/build/nvim-linux-x86_64.deb"
+if [[ ! -f "${DEB_FILE}" ]]; then
+  echo "Error: Expected ${DEB_FILE} not found." >&2
+  ls -la "${NVIM_SRC}/build"/*.deb 2>/dev/null || true
+  exit 1
+fi
+
+echo "Installing ${DEB_FILE} ..."
+sudo dpkg -i "${DEB_FILE}"
+
+echo ""
+echo "Success! Installed version:"
+nvim --version | head -n 1
