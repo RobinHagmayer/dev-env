@@ -4,19 +4,48 @@ set -euo pipefail
 NVIM_SRC="${HOME}/.local/src/neovim"
 REF="master"
 
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Build and install Neovim from source.  Fetches the latest changes from
+origin, checks out the requested ref, and builds a DEB package that is
+then installed via dpkg.
+
+Options:
+  -h, --help         Show this help message and exit
+  --tag <ref>        Build a specific tag or commit (e.g., v0.10.4)
+                     Defaults to master (latest upstream)
+
+Examples:
+  $(basename "$0")                  Build and install latest master
+  $(basename "$0") --tag v0.10.4    Build and install a specific release
+
+EOF
+    exit 0
+}
+
 # Parse arguments
-if [[ $# -gt 0 ]]; then
-  if [[ "$1" == "--tag" ]]; then
-    if [[ -z "${2:-}" ]]; then
-      echo "Usage: $0 [--tag <ref>]" >&2
-      exit 1
-    fi
-    REF="$2"
-  else
-    echo "Usage: $0 [--tag <ref>]" >&2
-    exit 1
-  fi
-fi
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            usage
+            ;;
+        --tag)
+            if [[ -z "${2:-}" ]]; then
+                echo "Error: --tag requires an argument." >&2
+                usage
+            fi
+            REF="$2"
+            shift
+            ;;
+        *)
+            echo "Error: Unknown option '$1'" >&2
+            usage
+            ;;
+    esac
+    shift
+done
 
 # Ensure source directory exists
 if [[ ! -d "${NVIM_SRC}/.git" ]]; then
