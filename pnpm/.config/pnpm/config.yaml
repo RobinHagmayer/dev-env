@@ -1,0 +1,11 @@
+# Security-conscious defaults for pnpm v11+.
+minimumReleaseAge: 1440
+minimumReleaseAgeStrict: true
+minimumReleaseAgeIgnoreMissingTime: false
+blockExoticSubdeps: true
+trustPolicy: no-downgrade
+strictDepBuilds: true
+dangerouslyAllowAllBuilds: false
+verifyStoreIntegrity: true
+strictSsl: true
+savePrefix: ""
