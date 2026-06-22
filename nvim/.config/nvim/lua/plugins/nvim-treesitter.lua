@@ -16,6 +16,7 @@ vim.api.nvim_create_autocmd('PackChanged', {
 })
 
 local languages = {
+  "json",
   "lua",
   "go",
   "python",
@@ -25,6 +26,7 @@ local languages = {
 }
 
 local tree_sitter_filetypes = {
+  "json",
   "lua",
   "go",
   "python",
