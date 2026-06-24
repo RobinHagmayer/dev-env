@@ -79,8 +79,9 @@ opt.smartcase = true
 -- Enable 24-bit RGB colors (required for modern themes)
 opt.termguicolors = true
 
--- Keep 8 lines visible above/below cursor
-opt.scrolloff = 8
+-- Keep the cursor roughly centered vertically while leaving a small margin
+local scrolloff = math.floor(vim.o.lines / 2) - 3
+opt.scrolloff = scrolloff
 
 -- Disable line wrapping (horizontal scroll instead)
 opt.wrap = false
