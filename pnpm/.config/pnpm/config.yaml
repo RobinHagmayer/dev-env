@@ -2,5 +2,6 @@
 # https://pnpm.io/docs/supply-chain-security
 minimumReleaseAge: 4320           # wait 3 days before installing a newly published version
 blockExoticSubdeps: true          # disallow transitive deps from git/tarball sources
-trustPolicy: no-downgrade          # refuse versions whose trust level dropped vs. prior releases
+# This breaks stuff: https://github.com/pnpm/pnpm/issues/11597
+# trustPolicy: no-downgrade          # refuse versions whose trust level dropped vs. prior releases
 dangerouslyAllowAllBuilds: false  # keep dependency postinstall scripts disabled by default
