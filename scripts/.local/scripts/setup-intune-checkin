@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Enable hands-off Intune background check-in on Ubuntu/GNOME.
+#
+# Background:
+#   The shipped intune-agent.service sets StateDirectory=intune, forcing
+#   $STATE_DIRECTORY=~/.local/state/intune, but intune-portal writes the device
+#   registration to ~/.config/intune. The hourly timer agent then finds no
+#   registration and bails with "Cannot checkin before a user logs in", so
+#   check-ins only happen when the Intune app is opened manually.
+#
+#   The fix is a systemd user drop-in (shipped in the `intune` stow package:
+#   ~/.config/systemd/user/intune-agent.service.d/10-fix-statedir.conf) that
+#   points $STATE_DIRECTORY back at ~/.config/intune.
+#
+# This script does the imperative bits stow can't: it checks prerequisites,
+# reloads the user daemon, triggers one check-in, and reports the result. It is
+# idempotent and read-mostly (the only state it changes is performing a check-in,
+# which is exactly the agent's normal job).
+#
+# Prerequisites (not automated here):
+#   - intune-portal, microsoft-identity-broker, microsoft-edge-stable installed.
+#   - Device enrolled: open "Microsoft Intune" and sign in once, which creates
+#     ~/.config/intune/registration.toml.
+
+CONFIG_REG="${HOME}/.config/intune/registration.toml"
+STATE_REG="${HOME}/.local/state/intune/registration.toml"
+DROPIN="${HOME}/.config/systemd/user/intune-agent.service.d/10-fix-statedir.conf"
+
+note() { printf '\033[1;34m==>\033[0m %s\n' "$1"; }
+warn() { printf '\033[1;33mWARN:\033[0m %s\n' "$1" >&2; }
+die()  { printf '\033[1;31mERROR:\033[0m %s\n' "$1" >&2; exit 1; }
+
+# 1. The Intune agent must be installed.
+if ! command -v intune-portal >/dev/null 2>&1 \
+   || [[ ! -x /opt/microsoft/intune/bin/intune-agent ]]; then
+    die "Intune is not installed. Install intune-portal, microsoft-identity-broker
+     and microsoft-edge-stable from Microsoft's apt repo, then re-run this script."
+fi
+
+# 2. The drop-in must be stowed.
+if [[ ! -e "$DROPIN" ]]; then
+    die "Drop-in not found at:
+       $DROPIN
+     Stow the package first, from the dotfiles repo root:  stow intune"
+fi
+
+# 3. Forward-looking guard: if a future package version has moved the registration
+#    to ~/.local/state/intune (and dropped the ~/.config/intune copy), this drop-in
+#    is no longer needed and would actually point the agent at the wrong place.
+if [[ -f "$STATE_REG" && ! -f "$CONFIG_REG" ]]; then
+    warn "registration.toml is now in ~/.local/state/intune, not ~/.config/intune."
+    warn "The packaging bug this drop-in works around looks fixed. Remove the"
+    warn "workaround:  cd ~/.dotfiles && stow -D intune && systemctl --user daemon-reload"
+    exit 1
+fi
+
+# 4. The device must be enrolled (registration present where the agent will look).
+if [[ ! -f "$CONFIG_REG" ]]; then
+    die "No registration found at ~/.config/intune/registration.toml.
+     Enroll first: open \"Microsoft Intune\", sign in completely (incl. MFA),
+     then re-run this script."
+fi
+
+# 5. Apply: reload the user daemon so the drop-in takes effect.
+note "Reloading systemd user daemon ..."
+systemctl --user daemon-reload
+
+note "Effective state directory for the agent:"
+systemctl --user show intune-agent.service -p Environment -p StateDirectory | sed 's/^/    /'
+
+# 6. Make sure the hourly timer is enabled (it ships enabled, but be sure).
+if ! systemctl --user is-enabled intune-agent.timer >/dev/null 2>&1; then
+    note "Enabling intune-agent.timer ..."
+    systemctl --user enable --now intune-agent.timer
+fi
+
+# 7. Verify: trigger one check-in and report.
+note "Triggering a check-in (no app needed) ..."
+systemctl --user start intune-agent.service
+sleep 6
+
+if journalctl --user -u intune-agent.service --since "30 sec ago" --no-pager 2>/dev/null \
+     | grep -q "Successfully checked in with Intune"; then
+    note "SUCCESS: background agent checked in on its own. Hourly check-ins are now hands-off."
+else
+    warn "Check-in did not report success. Recent agent log:"
+    journalctl --user -u intune-agent.service --since "1 min ago" --no-pager 2>/dev/null \
+        | grep -iE 'Skipping|Completed device|Successfully checked|error' | tail -10 >&2
+    die "See the log above. If it says 'Cannot checkin before a user logs in', the
+     registration path is still wrong; if it mentions auth/keyring, open the Intune
+     app and sign in again."
+fi
