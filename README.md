@@ -8,7 +8,7 @@ I use GNU stow for managing the symlinks.
 From the repo root, stow the packages used on this machine:
 
 ```sh
-stow env_vars fish git ghostty nvim pnpm
+stow env_vars fish git ghostty kitty nvim pnpm
 ```
 
 The `scripts` package is optional and is only needed on machines where I want `~/.local/scripts`.
