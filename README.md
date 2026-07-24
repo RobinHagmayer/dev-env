@@ -20,7 +20,15 @@ The `pi` package stows the portable global configuration:
 - `~/.pi/agent/settings.json`
 - `~/.pi/agent/APPEND_SYSTEM.md`
 - `~/.pi/agent/extensions/guardrails.json`
+- `~/.pi/agent/extensions/web-tools/` (`webfetch` and Exa-backed `websearch`)
 
+After stowing `pi` on a new machine, install the vendored extension's runtime dependencies:
+
+```sh
+pnpm install --prod --dir ~/.pi/agent/extensions/web-tools
+```
+
+`websearch` uses Exa's official MCP free tier and does not require an API key.
 `settings.json` declares installed Pi packages, so Pi can restore them without
 committing generated package directories. Credentials (`auth.json`), trust
 decisions, sessions, logs, model caches, downloaded binaries, and generated
