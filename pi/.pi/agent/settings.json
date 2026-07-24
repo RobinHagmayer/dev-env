@@ -1,0 +1,17 @@
+{
+  "defaultProvider": "openai-codex",
+  "defaultModel": "gpt-5.6-sol",
+  "defaultThinkingLevel": "medium",
+  "enabledModels": [],
+  "npmCommand": [
+    "pnpm"
+  ],
+  "packages": [
+    "git:github.com/aliou/pi-guardrails",
+    "npm:@plannotator/pi-extension"
+  ],
+  "hideThinkingBlock": false,
+  "theme": "dark",
+  "showCacheMissNotices": true,
+  "collapseChangelog": true
+}

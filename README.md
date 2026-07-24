@@ -8,10 +8,23 @@ I use GNU stow for managing the symlinks.
 From the repo root, stow the packages used on this machine:
 
 ```sh
-stow env_vars fish git ghostty kitty nvim pnpm
+stow env_vars fish git ghostty kitty nvim pi pnpm
 ```
 
 The `scripts` package is optional and is only needed on machines where I want `~/.local/scripts`.
+
+## Pi coding agent
+
+The `pi` package stows the portable global configuration:
+
+- `~/.pi/agent/settings.json`
+- `~/.pi/agent/APPEND_SYSTEM.md`
+- `~/.pi/agent/extensions/guardrails.json`
+
+`settings.json` declares installed Pi packages, so Pi can restore them without
+committing generated package directories. Credentials (`auth.json`), trust
+decisions, sessions, logs, model caches, downloaded binaries, and generated
+`git/` and `npm/` package contents remain local and must not be committed.
 
 ## Intune automatic check-in (Ubuntu/GNOME, corporate machines)
 
