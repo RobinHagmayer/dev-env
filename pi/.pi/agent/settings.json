@@ -13,5 +13,6 @@
   "hideThinkingBlock": false,
   "theme": "dark",
   "showCacheMissNotices": true,
-  "collapseChangelog": true
+  "collapseChangelog": true,
+  "lastChangelogVersion": "0.81.1"
 }
