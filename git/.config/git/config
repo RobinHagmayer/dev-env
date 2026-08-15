@@ -20,3 +20,5 @@
 	enabled = true
 [commit]
 	verbose = true
+[ghq]
+	root = /home/robin/code/oss
