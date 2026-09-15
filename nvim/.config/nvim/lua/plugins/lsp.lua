@@ -14,7 +14,7 @@ require("mason-tool-installer").setup({
     "gopls", -- Go language server
     "ruff", -- Python linter and format lsp
     "ty", -- Python type checking lsp
-    "tsgo", -- Typescript lsp
+    "tsc", -- TypeScript 7 native LSP
   },
   auto_update = false, -- Don't auto-update on startup to avoid silent breaking changes
   run_on_start = true,
@@ -90,6 +90,14 @@ vim.api.nvim_create_autocmd(
       -- Buffer-local keymaps so they only apply when an LSP is active
       local opts = { buffer = args.buf }
       vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+      vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
+      vim.keymap.set("n", "gr", vim.lsp.buf.references, opts)
+      vim.keymap.set("n", "gi", vim.lsp.buf.implementation, opts)
+      vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
+      vim.keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, {
+        buffer = args.buf,
+        desc = "LSP code action",
+      })
       vim.keymap.set("n", "<leader>d", function()
         vim.diagnostic.open_float({
           border = "rounded",
