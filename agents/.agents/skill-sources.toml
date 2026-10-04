@@ -1,0 +1,64 @@
+# Sources used to check whether shared skills have changed upstream.
+# The checker never updates skill files automatically.
+
+[skills.bro]
+path = "~/.agents/skills/bro"
+repo = "https://github.com/cursor/plugins.git"
+subdir = "pstack/skills/bro"
+ref = "main"
+installed_commit = "ecc249f1e306fc64ddf83c7bed16cacf7c2239db"
+installed_hash = "01da99986257f6d1148ac20082b03d7a5f009f994f61cc705dcbba9dcb7a61df"
+
+[skills.itk-design]
+path = "~/.agents/skills/itk-design"
+source = "local"
+note = "No GitHub reference"
+
+[skills.tldraw-offline]
+path = "~/.agents/skills/tldraw-offline"
+source = "local"
+note = "No GitHub reference"
+
+[skills.claude-prompt-review]
+path = "~/.agents/skills/claude-prompt-review"
+source = "local"
+note = "No GitHub reference"
+
+[skills.logging-best-practices]
+path = "~/.agents/skills/logging-best-practices"
+source = "local"
+note = "No GitHub reference"
+
+[skills.scoped-commits]
+path = "~/.agents/skills/scoped-commits"
+source = "local"
+note = "No GitHub reference"
+
+[skills.writing-claude-prompts]
+path = "~/.agents/skills/writing-claude-prompts"
+source = "local"
+note = "No GitHub reference"
+
+[skills.test-audit]
+path = "~/.agents/skills/test-audit"
+repo = "https://github.com/openclaw/openclaw.git"
+subdir = ".agents/skills/test-audit"
+ref = "main"
+installed_commit = "96e81e68add41800f68fba88cd9559f1f8dcc885"
+installed_hash = "b0ba92451403184b5cb60443775b06083ec8fc8047f6cc428a9e8ac4b1a1ec5d"
+
+[skills.effect]
+path = "~/.agents/skills/effect"
+repo = "https://github.com/kitlangton/skills.git"
+subdir = "skills/effect"
+ref = "main"
+installed_commit = "22c35cb7fd29f931789253fc3c8eb142f2863a8a"
+installed_hash = "4a677eada9f1849dc04015713c4888bec27daf75e6e95465b0cc308ef40f448e"
+
+[skills.show-me]
+path = "~/.agents/skills/show-me"
+repo = "https://github.com/humanlayer/skills.git"
+subdir = "plugins/show-me/skills/show-me"
+ref = "main"
+installed_commit = "ca7c8088db69e315a8b2deea43820270457f8f3c"
+installed_hash = "ca28e76c6560586b69d2225f8e6fd57aa4969259a6e77488f860fbba7ad451f6"

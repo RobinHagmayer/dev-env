@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 498.73 498.73" fill="none" stroke="currentColor" stroke-width="20" stroke-linecap="round" stroke-linejoin="round">
+  <defs></defs>
+  <g>
+    <polyline class="cls-1" points="277.41 261.06 224.57 209.32 275.23 157.6"></polyline>
+    <line class="cls-1" x1="395.61" y1="208.32" x2="224.57" y2="209.32"></line>
+  </g>
+  <g>
+    <polyline class="cls-1" points="342.78 234.81 395.61 286.55 344.96 338.27"></polyline>
+    <line class="cls-1" x1="224.57" y1="287.55" x2="395.61" y2="286.55"></line>
+  </g>
+  <polyline class="cls-1" points="297.54 258.62 297.54 361.43 121.37 361.43 121.37 159.44 147.88 162.9 156.78 127.73 296.27 127.73 296.27 181.63"></polyline>
+  <line class="cls-1" x1="117.73" y1="155.98" x2="155.74" y2="123.79"></line>
+</svg>

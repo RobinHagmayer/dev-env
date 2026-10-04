@@ -1,0 +1,3 @@
+interface:
+  display_name: "Scoped Commits"
+  short_description: "Write commit messages as <scope>: <description>"

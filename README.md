@@ -8,10 +8,34 @@ I use GNU stow for managing the symlinks.
 From the repo root, stow the packages used on this machine:
 
 ```sh
+stow --no-folding agents
 stow env_vars fish git ghostty kitty nvim pi pnpm
 ```
 
 The `scripts` package is optional and is only needed on machines where I want `~/.local/scripts`.
+
+## Shared agent skills
+
+The `agents` package tracks `~/.agents/skills` and `~/.agents/skill-sources.toml`.
+These are the shared skills retained for a new installation. Restore them with:
+
+```sh
+stow --no-folding agents
+```
+
+The `--no-folding` option keeps `~/.agents` as a real directory and links its
+files into this repository, including all skill assets and helper scripts.
+
+On this machine, `~/.claude/skills` already links to `~/.agents/skills`. To restore
+that link on a fresh installation, when `~/.claude/skills` does not exist:
+
+```sh
+mkdir -p ~/.claude
+ln -s ../.agents/skills ~/.claude/skills
+```
+
+Codex's built-in skills can be recreated by Codex. Skills outside
+`~/.agents/skills` are not part of the retained backup set.
 
 ## Pi coding agent
 
