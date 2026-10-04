@@ -1,8 +1,12 @@
 {
   "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.6-terra",
+  "defaultModel": "gpt-6.1-sol",
   "defaultThinkingLevel": "medium",
-  "enabledModels": [],
+  "enabledModels": [
+    "openai-codex/gpt-6-astra",
+    "openai-codex/gpt-6-luna",
+    "openai-codex/gpt-6.1-sol"
+  ],
   "npmCommand": [
     "pnpm"
   ],
@@ -14,6 +18,7 @@
   "theme": "dark",
   "showCacheMissNotices": true,
   "collapseChangelog": true,
-  "lastChangelogVersion": "0.84.1",
-  "enableInstallTelemetry": false
+  "enableInstallTelemetry": false,
+  "quietStartup": true,
+  "tuiMode": "fullscreen"
 }
