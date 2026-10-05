@@ -42,15 +42,23 @@
   no_log: true
   when: claude_code_settings_file.stat.exists
 
+- name: Parse existing Claude Code settings
+  ansible.builtin.set_fact:
+    claude_code_settings_data: "{{ claude_code_settings.content | default('e30=') | b64decode | from_json }}"
+  no_log: true
+
+# Claude Code rewrites this file in its own formatting, so only write when the
+# setting is missing; comparing content would make every run reformat it.
 - name: Disable Claude Code background updates without replacing other settings
   ansible.builtin.copy:
     content: >-
-      {{ (claude_code_settings.content | default('e30=') | b64decode | from_json)
+      {{ claude_code_settings_data
          | combine({'env': {'DISABLE_AUTOUPDATER': '1'}}, recursive=true)
          | to_nice_json }}
     dest: "{{ claude_code_home }}/settings.json"
     mode: "0600"
     backup: true
+  when: (claude_code_settings_data.env | default({})).DISABLE_AUTOUPDATER | default('') | string != '1'
   no_log: true
 
 # Use the versioned native binary directly. The shell installer always fetches
