@@ -65,6 +65,25 @@ unstow it before upgrading (or remove its now-broken symlink). If an old
 The `scripts` package is optional. Neovim and Nerd Font installation are now
 provided by Ansible; the older scripts are retained only for reference.
 
+## Regional formats (German dates, currency and units, English UI)
+
+The `locale` package keeps the display language English (`LANG=en_US.UTF-8`) but
+sets the regional formats (`LC_TIME`, `LC_MONETARY`, `LC_NUMERIC`,
+`LC_MEASUREMENT`, `LC_PAPER`) to `de_DE.UTF-8` through
+`~/.config/environment.d/`. Unlike `shell/env.sh`, the systemd user session
+reads this, so desktop apps such as Microsoft Edge inherit it. Generate the
+locale first, then stow and log out and back in:
+
+```sh
+(cd ansible && uv run ansible-playbook playbooks/locale.yml --ask-become-pass)
+stow --no-folding locale
+```
+
+In Edge, set Settings > Languages > "Share additional operating system region"
+to the fuller option. That setting lives in the browser profile and is not
+tracked here. Whether Edge reads the `LC_*` variables is untested; the
+fallback is launching it with `--lang=en-DE`.
+
 ## Shared agent skills
 
 The `agents` package tracks `~/.agents/skills` and `~/.agents/skill-sources.toml`.
