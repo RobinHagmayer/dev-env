@@ -107,6 +107,21 @@ Build Neovim from source and install it as a DEB package (so `dpkg`/`apt remove 
 uv run ansible-playbook playbooks/neovim.yml --ask-become-pass
 ```
 
+For the modern trial config, build the pinned current upstream HEAD into a
+**separate user prefix**, leaving the system Neovim/runtime alone:
+
+```sh
+uv run ansible-playbook playbooks/neovim-modern.yml --ask-become-pass
+```
+
+The `nvim-modern` Stow launcher prefers `~/.local/opt/nvim-modern/bin/nvim`.
+The modern playbook selects an exact source commit in its vars; update that SHA
+deliberately after reviewing Neovim's `news-breaking` documentation. The role
+records its successful build signature and rebuilds only when the pin/build
+type changes or its binary is missing. No `sudo` is used for the prefix install.
+The ordinary `neovim.yml` retains the latest stable 0.12.5 system DEB path.
+See [the editor guide](../nvim-modern/README.md) for setup and isolation.
+
 Every role installs the system packages it needs itself (tasks tagged `packages`, run with sudo), so each role works on its own. Run a subset with tags, and skip the sudo tasks when the packages are already there:
 
 ```sh

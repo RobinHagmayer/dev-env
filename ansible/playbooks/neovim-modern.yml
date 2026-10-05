@@ -1,0 +1,12 @@
+---
+# Current upstream HEAD, pinned for reproducibility. Update deliberately.
+# Never replaces /usr/bin/nvim, its runtime, or your existing config.
+- name: Build an isolated modern Neovim
+  hosts: workstations
+  vars:
+    neovim_version: "299ca3c81e2d181160c56989e7255d9930f5bd34"
+    neovim_user_install: true
+    neovim_src_dir: "{{ ansible_facts['user_dir'] }}/.local/src/neovim-modern"
+  roles:
+    - role: neovim
+      tags: [neovim]

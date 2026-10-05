@@ -63,7 +63,31 @@ unstow it before upgrading (or remove its now-broken symlink). If an old
 `ghostty/config` link exists, remove it before deploying `config.ghostty`.
 
 The `scripts` package is optional. Neovim and Nerd Font installation are now
-provided by Ansible; the older scripts are retained only for reference.
+provided by Ansible.
+
+## Modern Neovim (independent trial config)
+
+Your existing `nvim` config is retained. A second app provides current LSP,
+project-local TypeScript/Effect support, FFF search, syntax editing, completion,
+and contextual feature discovery:
+
+```sh
+bash nvim-modern/setup-tools.sh
+stow --simulate --verbose nvim-modern
+stow nvim-modern
+nvim-modern
+```
+
+The launcher sets `NVIM_APPNAME=nvim-modern`, isolating plugins, Mason tools,
+cache, and state. Plain `nvim` still uses the old config. Use **Space ?** for
+contextual actions, **Space h h** for the guide, and **Space u h** for health.
+See [nvim-modern/README.md](nvim-modern/README.md) for prerequisites, keymaps,
+Effect/Oxlint project setup, updates, tests, and rollback.
+
+The latest upstream runtime is separately pinned in
+`ansible/playbooks/neovim-modern.yml` and installed into
+`~/.local/opt/nvim-modern` without replacing the system Neovim. Its experimental
+HEAD build is optional; the new config also works with Neovim 0.12+.
 
 ## Shared agent skills
 

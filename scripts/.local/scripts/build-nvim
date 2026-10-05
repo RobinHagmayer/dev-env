@@ -1,93 +1,26 @@
 #!/usr/bin/env bash
+# Delegate to the maintained Ansible role instead of resetting/cleaning a clone.
 set -euo pipefail
-
-NVIM_SRC="${HOME}/.local/src/neovim"
-REF="master"
-
-usage() {
-    cat <<EOF
-Usage: $(basename "$0") [OPTIONS]
-
-Build and install Neovim from source.  Fetches the latest changes from
-origin, checks out the requested ref, and builds a DEB package that is
-then installed via dpkg.
-
-Options:
-  -h, --help         Show this help message and exit
-  --tag <ref>        Build a specific tag or commit (e.g., v0.10.4)
-                     Defaults to master (latest upstream)
-
-Examples:
-  $(basename "$0")                  Build and install latest master
-  $(basename "$0") --tag v0.10.4    Build and install a specific release
-
-EOF
-    exit 0
-}
-
-# Parse arguments
+root=$(cd -- "$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")/../../.." && pwd)
+playbook=neovim-modern.yml
+ref=""
 while [[ $# -gt 0 ]]; do
-    case "$1" in
-        -h|--help)
-            usage
-            ;;
-        --tag)
-            if [[ -z "${2:-}" ]]; then
-                echo "Error: --tag requires an argument." >&2
-                usage
-            fi
-            REF="$2"
-            shift
-            ;;
-        *)
-            echo "Error: Unknown option '$1'" >&2
-            usage
-            ;;
-    esac
-    shift
+  case "$1" in
+    --system) playbook=neovim.yml ;;
+    --tag)
+      [[ -n "${2:-}" ]] || { echo '--tag requires a release tag or commit' >&2; exit 1; }
+      ref="$2"
+      [[ "$ref" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$|^[0-9a-f]{40}$ ]] || { echo 'Use an exact release tag or 40-character commit.' >&2; exit 1; }
+      shift ;;
+    -h|--help)
+      printf 'Usage: build-nvim [--tag vX.Y.Z|COMMIT] [--system]\nDefault: independent pinned HEAD at ~/.local/opt/nvim-modern (no system replacement).\n--system: explicitly replace the system Neovim with the pinned stable DEB.\n'
+      exit 0 ;;
+    *) echo "Unknown option: $1" >&2; exit 1 ;;
+  esac
+  shift
 done
-
-# Ensure source directory exists
-if [[ ! -d "${NVIM_SRC}/.git" ]]; then
-  echo "Error: Neovim source not found at ${NVIM_SRC}" >&2
-  echo "Clone it first with:" >&2
-  echo "  git clone https://github.com/neovim/neovim.git ${NVIM_SRC}" >&2
-  exit 1
-fi
-
-echo "Fetching updates ..."
-git -C "${NVIM_SRC}" fetch origin --tags
-
-echo "Resetting repository state ..."
-git -C "${NVIM_SRC}" reset --hard
-git -C "${NVIM_SRC}" clean -fd
-
-echo "Checking out ${REF} ..."
-if [[ "${REF}" == "master" ]]; then
-  git -C "${NVIM_SRC}" checkout -B master origin/master
-else
-  git -C "${NVIM_SRC}" checkout --detach "${REF}"
-fi
-
-echo "Cleaning previous build artifacts ..."
-make -C "${NVIM_SRC}" distclean
-
-echo "Building neovim (RelWithDebInfo) ..."
-make -C "${NVIM_SRC}" CMAKE_BUILD_TYPE=RelWithDebInfo
-
-echo "Building DEB package ..."
-(cd "${NVIM_SRC}/build" && cpack -G DEB)
-
-DEB_FILE="${NVIM_SRC}/build/nvim-linux-x86_64.deb"
-if [[ ! -f "${DEB_FILE}" ]]; then
-  echo "Error: Expected ${DEB_FILE} not found." >&2
-  ls -la "${NVIM_SRC}/build"/*.deb 2>/dev/null || true
-  exit 1
-fi
-
-echo "Installing ${DEB_FILE} ..."
-sudo dpkg -i "${DEB_FILE}"
-
-echo ""
-echo "Success! Installed version:"
-nvim --version | head -n 1
+command -v uv >/dev/null || { echo 'Install uv first; see ansible/README.md.' >&2; exit 1; }
+args=(playbooks/"$playbook" --ask-become-pass)
+[[ -z "$ref" ]] || args+=(--extra-vars "neovim_version=$ref")
+cd -- "$root/ansible"
+exec uv run ansible-playbook "${args[@]}"
