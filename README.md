@@ -59,6 +59,12 @@ Build and install Ghostty from source (pulls in the Zig role):
 uv run ansible-playbook playbooks/ghostty.yml --ask-become-pass
 ```
 
+Build Neovim from source and install it as a DEB package (so `dpkg`/`apt remove neovim` removes it cleanly):
+
+```sh
+uv run ansible-playbook playbooks/neovim.yml --ask-become-pass
+```
+
 Every role installs the system packages it needs itself (tasks tagged `packages`, run with sudo), so each role works on its own. Run a subset with tags, and skip the sudo tasks when the packages are already there:
 
 ```sh
@@ -66,6 +72,6 @@ uv run ansible-playbook playbooks/dev-tools.yml --tags go,zig --ask-become-pass
 uv run ansible-playbook playbooks/dev-tools.yml --skip-tags packages
 ```
 
-Tool versions are pinned in `roles/<role>/defaults/main.yml`. Go, Zig and Ghostty also pin a sha256 checksum, so update both when bumping a version. Each Ghostty release needs one specific Zig version (`ghostty_zig_version`); the Ghostty role fails early if the installed Zig differs.
+Tool versions are pinned in `roles/<role>/defaults/main.yml`. Neovim is pinned by git tag. Go, Zig and Ghostty also pin a sha256 checksum, so update both when bumping a version. Each Ghostty release needs one specific Zig version (`ghostty_zig_version`); the Ghostty role fails early if the installed Zig differs.
 
 Lint: `uv run ansible-lint`
