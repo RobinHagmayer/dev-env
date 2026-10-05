@@ -72,6 +72,8 @@ uv run ansible-playbook playbooks/dev-tools.yml --tags go,zig --ask-become-pass
 uv run ansible-playbook playbooks/dev-tools.yml --skip-tags packages
 ```
 
-Tool versions are pinned in `roles/<role>/defaults/main.yml`. Neovim is pinned by git tag. Go, Zig and Ghostty also pin a sha256 checksum, so update both when bumping a version. Each Ghostty release needs one specific Zig version (`ghostty_zig_version`); the Ghostty role fails early if the installed Zig differs.
+Tool versions are configured in `roles/<role>/defaults/main.yml`. Neovim is pinned by git tag. Go, Zig and Ghostty also pin a sha256 checksum, so update both when bumping a version. Each Ghostty release needs one specific Zig version (`ghostty_zig_version`); the Ghostty role fails early if the installed Zig differs.
+
+Rerunning Neovim checks the installed DEB version, so it reinstalls after `apt remove neovim` and applies version changes (including downgrades). Ghostty rebuilds when its binary is missing or its recorded build settings differ; existing version-only markers trigger a one-time rebuild. Rust ensures `rust_toolchain` is installed and selected as the default. The default `stable` follows a release channel rather than pinning a version; existing toolchains are updated manually with `rustup update`.
 
 Lint: `uv run ansible-lint`

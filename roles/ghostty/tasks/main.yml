@@ -48,21 +48,46 @@
       zig_sha256 for the zig role accordingly.
   when: not ansible_check_mode
 
-- name: Check for an existing build of this version
+- name: Calculate Ghostty build signature
+  ansible.builtin.set_fact:
+    ghostty_build_signature: >-
+      {{ [ghostty_version, ghostty_sha256, ghostty_prefix,
+          ghostty_build_flags, ghostty_zig, ghostty_zig_version]
+         | to_json | hash('sha256') }}
+
+- name: Check installed Ghostty binary
   ansible.builtin.stat:
-    path: "{{ ghostty_src_dir }}/.installed"
+    path: "{{ ghostty_prefix }}/bin/ghostty"
+  register: ghostty_binary
+
+- name: Check for an existing build record
+  ansible.builtin.stat:
+    path: "{{ ghostty_prefix }}/.ghostty-build"
   register: ghostty_installed
 
-- name: Build and install Ghostty
-  ansible.builtin.command:
-    cmd: "{{ ghostty_zig }} build -p {{ ghostty_prefix }} {{ ghostty_build_flags | join(' ') }}"
-    chdir: "{{ ghostty_src_dir }}"
-  when: not ghostty_installed.stat.exists
-  changed_when: true
+- name: Read existing build record
+  ansible.builtin.slurp:
+    src: "{{ ghostty_prefix }}/.ghostty-build"
+  register: ghostty_build_record
+  when: ghostty_installed.stat.exists
 
-- name: Record the installed version
-  ansible.builtin.copy:
-    content: "{{ ghostty_version }}\n"
-    dest: "{{ ghostty_src_dir }}/.installed"
-    mode: "0644"
-    force: false
+- name: Build and install Ghostty with the requested settings
+  # A dry run cannot build source or record a successful installation.
+  when:
+    - not ansible_check_mode
+    - >-
+      not ghostty_binary.stat.exists or
+      not (ghostty_binary.stat.executable | default(false)) or
+      (ghostty_build_record.content | default('') | b64decode | trim) != ghostty_build_signature
+  block:
+    - name: Build and install Ghostty
+      ansible.builtin.command:
+        cmd: "{{ ghostty_zig }} build -p {{ ghostty_prefix }} {{ ghostty_build_flags | join(' ') }}"
+        chdir: "{{ ghostty_src_dir }}"
+      changed_when: true
+
+    - name: Record the successful build settings
+      ansible.builtin.copy:
+        content: "{{ ghostty_build_signature }}\n"
+        dest: "{{ ghostty_prefix }}/.ghostty-build"
+        mode: "0644"

@@ -19,15 +19,29 @@
     dest: "{{ neovim_src_dir }}"
     version: "{{ neovim_version }}"
 
-- name: Check for an existing install of this version
-  ansible.builtin.stat:
-    path: "{{ neovim_src_dir }}/.installed-{{ neovim_version }}"
+- name: Check installed Neovim package version
+  ansible.builtin.command:
+    argv:
+      - dpkg-query
+      - -W
+      - '-f=${Status}\n${Version}\n'
+      - neovim
   register: neovim_installed
+  changed_when: false
+  failed_when: neovim_installed.rc not in [0, 1]
+  check_mode: false
 
 # Building a DEB (instead of `make install`) lets dpkg remove all files again.
 # BUILD.md calls this an unsupported, best-effort feature of the build.
 - name: Build Neovim and package it as DEB
-  when: not neovim_installed.stat.exists
+  # A dry run cannot build the DEB needed by the installation task.
+  when:
+    - not ansible_check_mode
+    - >-
+      neovim_installed.rc != 0 or
+      neovim_installed.stdout_lines | first != 'install ok installed' or
+      (neovim_installed.stdout_lines | last).split('-')[0] !=
+      neovim_version | regex_replace('^v', '')
   block:
     - name: Remove previous build output
       ansible.builtin.command:
@@ -51,14 +65,6 @@
       ansible.builtin.apt:
         deb: "{{ neovim_src_dir }}/build/nvim-linux-x86_64.deb"
         state: present
+        allow_downgrade: true
       become: true
-      register: neovim_install
       tags: [packages]
-
-    - name: Record the installed version
-      ansible.builtin.copy:
-        content: "{{ neovim_version }}\n"
-        dest: "{{ neovim_src_dir }}/.installed-{{ neovim_version }}"
-        mode: "0644"
-        force: false
-      when: neovim_install is not skipped
