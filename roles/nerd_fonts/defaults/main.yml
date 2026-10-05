@@ -1,0 +1,15 @@
+---
+nerd_fonts_apt_packages:
+  - ca-certificates
+  - fontconfig
+  - tar
+  - xz-utils
+
+# Match the original install-nerd-font script. Update the checksum whenever
+# changing the release or font family.
+nerd_fonts_version: "3.4.0"
+nerd_fonts_family: Meslo
+nerd_fonts_sha256: a57936d96aefb5cfff0660f3294210ee04705529af6cf811e2274b0923a03939
+nerd_fonts_download_dir: "{{ ansible_facts['user_dir'] }}/.cache/nerd-fonts"
+nerd_fonts_install_dir: "{{ ansible_facts['user_dir'] }}/.local/share/fonts/{{ nerd_fonts_family }}"
+nerd_fonts_archive: "{{ nerd_fonts_download_dir }}/{{ nerd_fonts_family }}-{{ nerd_fonts_version }}.tar.xz"

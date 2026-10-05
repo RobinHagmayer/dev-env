@@ -74,6 +74,14 @@ Reruns do not upgrade existing tools. Use `pi update`, `claude update`, or Codex
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
+Install Meslo Nerd Font v3.4.0 (migrated from `~/.dotfiles/scripts/.local/scripts/install-nerd-font`):
+
+```sh
+uv run ansible-playbook playbooks/nerd-fonts.yml --ask-become-pass
+```
+
+The archive is cached and SHA256-verified, then extracted into `~/.local/share/fonts/Meslo` as your normal user. Reruns compare the archive contents and repair missing or changed files; the font cache is refreshed only when extraction changes something. Set `nerd_fonts_family`, `nerd_fonts_version` and the matching `nerd_fonts_sha256` in the role defaults to use another font/release. Check mode does not download or extract fonts. No terminal configuration is changed, and the original script and any previously installed fonts are left untouched; obsolete files are not automatically pruned.
+
 Build and install Ghostty's current development (tip) version from its prepared source tarball (pulls in the Zig role):
 
 ```sh
