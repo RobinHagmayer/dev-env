@@ -1,0 +1,11 @@
+---
+rust_apt_packages:
+  - build-essential # C linker, required by the Rust toolchain
+  - ca-certificates # HTTPS downloads
+  - curl # used by the rustup installer
+rust_toolchain: "1.99.0"
+rust_rustup_version: "1.29.1"
+# https://static.rust-lang.org/rustup/archive/<version>/x86_64-unknown-linux-gnu/rustup-init.sha256
+rust_rustup_sha256: dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71
+rust_home: "{{ ansible_facts['user_dir'] }}/.local/share/cargo"
+rust_toolchain_home: "{{ ansible_facts['user_dir'] }}/.local/share/rustup"

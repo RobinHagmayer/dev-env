@@ -1,0 +1,17 @@
+---
+# Packages from https://github.com/neovim/neovim/blob/master/BUILD.md (Ubuntu / Debian).
+neovim_apt_packages:
+  - build-essential
+  - ca-certificates # HTTPS downloads
+  - cmake
+  - curl # used by the build to fetch bundled dependencies
+  - gettext
+  - git
+  - ninja-build
+
+# Git tag of the release to build. Check the breaking changes before upgrading:
+# https://neovim.io/doc/user/news.html#news-breaking
+neovim_version: "v0.12.5"
+neovim_repo: https://github.com/neovim/neovim.git
+neovim_src_dir: "{{ ansible_facts['user_dir'] }}/.local/src/neovim"
+neovim_build_type: RelWithDebInfo

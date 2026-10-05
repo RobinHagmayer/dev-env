@@ -1,0 +1,18 @@
+---
+- name: Validate the environment fragment name and variable names
+  ansible.builtin.assert:
+    that:
+      - shell_environment_name is match('^[a-z][a-z0-9_-]*$')
+      - shell_environment_exports.keys() | reject('match', '^[A-Z_][A-Z0-9_]*$') | list | length == 0
+
+- name: Create the generated shell environment directory
+  ansible.builtin.file:
+    path: "{{ shell_environment_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Generate tool environment initialization
+  ansible.builtin.template:
+    src: tool.sh.j2
+    dest: "{{ shell_environment_dir }}/{{ shell_environment_name }}.sh"
+    mode: "0644"

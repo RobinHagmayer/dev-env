@@ -1,0 +1,7 @@
+---
+# Builds Neovim from source and installs it as a DEB package.
+- name: Build and install Neovim
+  hosts: workstations
+  roles:
+    - role: neovim
+      tags: [neovim]

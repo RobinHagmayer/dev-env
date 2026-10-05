@@ -1,0 +1,6 @@
+---
+- name: Install Nerd Fonts for the current user
+  hosts: workstations
+  roles:
+    - role: nerd_fonts
+      tags: [nerd_fonts, fonts]

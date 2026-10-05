@@ -1,0 +1,65 @@
+---
+- name: Check supported distribution for the Fish PPA
+  ansible.builtin.assert:
+    that: ansible_facts['distribution'] == 'Ubuntu'
+    fail_msg: The Fish PPA role supports Ubuntu only.
+
+- name: Install Fish through apt
+  become: true
+  tags: [packages]
+  block:
+    - name: Install system packages for the Fish repository
+      ansible.builtin.apt:
+        name: "{{ fish_apt_packages }}"
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Add the official Fish 4 PPA
+      ansible.builtin.deb822_repository:
+        name: fish-shell-release-4
+        types: [deb]
+        uris: "{{ fish_ppa_uri }}"
+        suites: ["{{ ansible_facts['distribution_release'] }}"]
+        components: [main]
+        signed_by: "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x{{ fish_ppa_key_fingerprint }}"
+        state: present
+        mode: "0644"
+      register: fish_repository
+
+    # Only touch apt when the installed version differs from the pin, so a
+    # rerun is a no-op even if the PPA has since dropped the pinned build.
+    - name: Check the installed Fish version
+      ansible.builtin.command:
+        argv: [dpkg-query, --show, "--showformat=${Version}", fish]
+      register: fish_installed
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Determine whether Fish needs installation
+      ansible.builtin.set_fact:
+        fish_needs_install: "{{ fish_installed.rc != 0 or fish_installed.stdout | trim != fish_version }}"
+
+    # Fail if the pinned package is no longer available; never fall back to latest.
+    - name: Reconcile the installed Fish version
+      when: fish_needs_install
+      block:
+        - name: Release the Fish version hold
+          ansible.builtin.dpkg_selections:
+            name: fish
+            selection: install
+
+        - name: Install the pinned Fish package
+          ansible.builtin.apt:
+            name: "fish={{ fish_version }}"
+            state: present
+            allow_downgrade: true
+            update_cache: true
+            cache_valid_time: "{{ 0 if fish_repository is changed else 3600 }}"
+
+    # Keep apt upgrade and unattended upgrades from moving the pinned version.
+    - name: Hold Fish at the pinned version
+      ansible.builtin.dpkg_selections:
+        name: fish
+        selection: hold

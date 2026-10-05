@@ -1,0 +1,9 @@
+---
+codex_version: "0.160.0"
+codex_home: "{{ ansible_facts['user_dir'] }}/.codex"
+codex_apt_packages:
+  - ca-certificates
+  - curl
+  - tar
+codex_bin_dir: "{{ ansible_facts['user_dir'] }}/.local/bin"
+codex_installer_dir: "{{ ansible_facts['user_dir'] }}/.cache/ansible-installers"

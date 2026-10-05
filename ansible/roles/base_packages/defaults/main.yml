@@ -1,0 +1,14 @@
+---
+# General-purpose tools. Packages a specific tool needs to be installed or
+# built are listed in that tool's role, not here.
+base_packages_names:
+  - btop
+  - ca-certificates
+  - curl
+  - fzf
+  - git
+  - jq
+  - tmux
+  - tree
+  - unzip
+  - wget

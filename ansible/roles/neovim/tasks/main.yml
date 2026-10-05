@@ -1,0 +1,72 @@
+---
+- name: Install system packages for Neovim
+  ansible.builtin.apt:
+    name: "{{ neovim_apt_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  become: true
+  tags: [packages]
+
+- name: Check supported architecture
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['architecture'] == 'x86_64'
+      - neovim_version is match('^v[0-9]+\.[0-9]+\.[0-9]+$')
+    fail_msg: The DEB file name below is only checked for x86_64.
+
+- name: Check out Neovim source
+  ansible.builtin.git:
+    repo: "{{ neovim_repo }}"
+    dest: "{{ neovim_src_dir }}"
+    version: "{{ neovim_version }}"
+
+- name: Check installed Neovim package version
+  ansible.builtin.command:
+    argv:
+      - dpkg-query
+      - -W
+      - '-f=${Status}\n${Version}\n'
+      - neovim
+  register: neovim_installed
+  changed_when: false
+  failed_when: neovim_installed.rc not in [0, 1]
+  check_mode: false
+
+# Building a DEB (instead of `make install`) lets dpkg remove all files again.
+# BUILD.md calls this an unsupported, best-effort feature of the build.
+- name: Build Neovim and package it as DEB
+  # A dry run cannot build the DEB needed by the installation task.
+  when:
+    - not ansible_check_mode
+    - >-
+      neovim_installed.rc != 0 or
+      neovim_installed.stdout_lines | first != 'install ok installed' or
+      (neovim_installed.stdout_lines | last).split('-')[0] !=
+      neovim_version | regex_replace('^v', '')
+  block:
+    - name: Remove previous build output
+      ansible.builtin.command:
+        cmd: make distclean
+        chdir: "{{ neovim_src_dir }}"
+      changed_when: false
+
+    - name: Build Neovim
+      ansible.builtin.command:
+        cmd: "make CMAKE_BUILD_TYPE={{ neovim_build_type }}"
+        chdir: "{{ neovim_src_dir }}"
+      changed_when: true
+
+    - name: Create DEB package
+      ansible.builtin.command:
+        cmd: cpack -G DEB
+        chdir: "{{ neovim_src_dir }}/build"
+      changed_when: true
+
+    - name: Install DEB package
+      ansible.builtin.apt:
+        deb: "{{ neovim_src_dir }}/build/nvim-linux-x86_64.deb"
+        state: present
+        allow_downgrade: true
+      become: true
+      tags: [packages]

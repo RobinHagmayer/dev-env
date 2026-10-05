@@ -1,0 +1,11 @@
+---
+claude_code_version: "2.1.289"
+# linux-x64 binary checksum from the release's manifest.json.
+claude_code_sha256: a186b99e4a9c88366cd49df2f7dad56c61fc306ef0140b19ee64b7c42a8d1348
+claude_code_home: "{{ ansible_facts['user_dir'] }}/.claude"
+claude_code_install_dir: "{{ ansible_facts['user_dir'] }}/.local/share/claude/versions"
+claude_code_apt_packages:
+  - ca-certificates
+  - curl
+  - bash
+claude_code_bin_dir: "{{ ansible_facts['user_dir'] }}/.local/bin"

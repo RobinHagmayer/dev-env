@@ -1,0 +1,13 @@
+#!/bin/sh
+# Managed by Ansible; retain the upstream managed-install layout.
+PI_MANAGED_INSTALL_ROOT={{ pi_install_dir | quote }}
+export PI_MANAGED_INSTALL_ROOT
+IFS= read -r pi_version < "$PI_MANAGED_INSTALL_ROOT/current-version" || exit 1
+case "$pi_version" in
+    ""|.|..|*[!0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz._+-]*)
+        printf 'Invalid managed Pi version\n' >&2
+        exit 1 ;;
+esac
+PATH={{ (pnpm_home ~ '/bin') | quote }}:$PATH
+export PATH
+exec "$PI_MANAGED_INSTALL_ROOT/releases/$pi_version/node_modules/.bin/pi" "$@"

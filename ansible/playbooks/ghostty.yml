@@ -1,0 +1,8 @@
+---
+# Builds the pinned stable Ghostty release from its source tarball.
+# Pulls in the zig role as a dependency.
+- name: Build and install Ghostty
+  hosts: workstations
+  roles:
+    - role: ghostty
+      tags: [ghostty]

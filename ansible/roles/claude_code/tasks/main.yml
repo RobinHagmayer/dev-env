@@ -1,0 +1,87 @@
+---
+- name: Install system packages for Claude Code
+  ansible.builtin.apt:
+    name: "{{ claude_code_apt_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  become: true
+  tags: [packages]
+
+- name: Require an exact Claude Code release on the supported architecture
+  ansible.builtin.assert:
+    that:
+      - claude_code_version is match('^[0-9]+\.[0-9]+\.[0-9]+$')
+      - ansible_facts['architecture'] == 'x86_64'
+
+- name: Create Claude Code installation directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ claude_code_install_dir }}"
+    - "{{ claude_code_bin_dir }}"
+
+- name: Create the private Claude Code configuration directory
+  ansible.builtin.file:
+    path: "{{ claude_code_home }}"
+    state: directory
+    mode: "0700"
+
+# Preserve all unrelated preferences. Fail rather than overwrite malformed JSON.
+- name: Check for Claude Code settings
+  ansible.builtin.stat:
+    path: "{{ claude_code_home }}/settings.json"
+  register: claude_code_settings_file
+
+- name: Read existing Claude Code settings
+  ansible.builtin.slurp:
+    src: "{{ claude_code_home }}/settings.json"
+  register: claude_code_settings
+  no_log: true
+  when: claude_code_settings_file.stat.exists
+
+- name: Parse existing Claude Code settings
+  ansible.builtin.set_fact:
+    claude_code_settings_data: "{{ claude_code_settings.content | default('e30=') | b64decode | from_json }}"
+  no_log: true
+
+# Claude Code rewrites this file in its own formatting, so only write when the
+# setting is missing; comparing content would make every run reformat it.
+- name: Disable Claude Code background updates without replacing other settings
+  ansible.builtin.copy:
+    content: >-
+      {{ claude_code_settings_data
+         | combine({'env': {'DISABLE_AUTOUPDATER': '1'}}, recursive=true)
+         | to_nice_json }}
+    dest: "{{ claude_code_home }}/settings.json"
+    mode: "0600"
+    backup: true
+  when: (claude_code_settings_data.env | default({})).DISABLE_AUTOUPDATER | default('') | string != '1'
+  no_log: true
+
+# Use the versioned native binary directly. The shell installer always fetches
+# a latest bootstrap binary, even when its target argument is pinned.
+- name: Download the pinned Claude Code native binary
+  ansible.builtin.get_url:
+    url: "https://downloads.claude.ai/claude-code-releases/{{ claude_code_version }}/linux-x64/claude"
+    dest: "{{ claude_code_install_dir }}/{{ claude_code_version }}"
+    checksum: "sha256:{{ claude_code_sha256 }}"
+    mode: "0755"
+  when: not ansible_check_mode
+
+- name: Select the pinned Claude Code binary
+  ansible.builtin.file:
+    src: "{{ claude_code_install_dir }}/{{ claude_code_version }}"
+    dest: "{{ claude_code_bin_dir }}/claude"
+    state: link
+    force: true
+
+- name: Verify the installed Claude Code version
+  ansible.builtin.command:
+    argv: ["{{ claude_code_bin_dir }}/claude", --version]
+  register: claude_code_verified
+  changed_when: false
+  failed_when: claude_code_verified.rc != 0 or claude_code_verified.stdout | trim != claude_code_version ~ ' (Claude Code)'
+  when: not ansible_check_mode

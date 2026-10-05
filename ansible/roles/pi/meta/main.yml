@@ -1,0 +1,4 @@
+---
+# Pi's managed installer requires Node.js >= 22.19 and npm.
+dependencies:
+  - role: pnpm

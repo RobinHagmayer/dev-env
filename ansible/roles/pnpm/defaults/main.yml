@@ -1,0 +1,10 @@
+---
+pnpm_apt_packages:
+  - ca-certificates # HTTPS downloads
+  - curl # used by the pnpm installer
+pnpm_version: "12.9.1"
+# Exact Node.js release, managed by pnpm runtime.
+pnpm_node_version: "24.21.0"
+# pnpm runtime installs Node.js without npm; install npm separately for Pi.
+pnpm_npm_version: "12.2.0"
+pnpm_home: "{{ ansible_facts['user_dir'] }}/.local/share/pnpm"

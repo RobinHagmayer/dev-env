@@ -1,0 +1,105 @@
+---
+- name: Install system packages for Pi
+  ansible.builtin.apt:
+    name: "{{ pi_apt_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  become: true
+  tags: [packages]
+
+- name: Require an exact Pi release
+  ansible.builtin.assert:
+    that: pi_version is match('^[0-9]+\.[0-9]+\.[0-9]+$')
+
+- name: Create Pi managed installation directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ pi_release_dir }}"
+    - "{{ pi_agent_dir }}/bin"
+    - "{{ pi_bin_dir }}"
+
+- name: Check the requested Pi release
+  ansible.builtin.command:
+    argv: ["{{ pi_release_dir }}/node_modules/.bin/pi", --version]
+  environment:
+    PATH: "{{ pnpm_home }}/bin:{{ ansible_facts['env']['PATH'] }}"
+  register: pi_release_check
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+# The official installer always resolves latest. Use its versioned, locked
+# manifests and managed layout instead, preserving sessions and credentials.
+- name: Install the requested Pi release with locked dependencies
+  when:
+    - not ansible_check_mode
+    - pi_release_check.rc != 0 or pi_release_check.stdout | trim != pi_version
+  block:
+    - name: Download pinned Pi installation manifests
+      ansible.builtin.get_url:
+        url: "https://pi.dev/api/installer/releases/{{ pi_version }}/{{ item.name }}"
+        dest: "{{ pi_release_dir }}/{{ item.name }}"
+        checksum: "sha256:{{ item.sha256 }}"
+        mode: "0644"
+      loop:
+        - name: package.json
+          sha256: "{{ pi_package_sha256 }}"
+        - name: package-lock.json
+          sha256: "{{ pi_lock_sha256 }}"
+
+    - name: Install locked Pi dependencies without lifecycle scripts
+      ansible.builtin.command:
+        argv:
+          - "{{ pnpm_home }}/bin/npm"
+          - ci
+          - --ignore-scripts
+          - --min-release-age=0
+          - --omit=dev
+          - --include=optional
+          - --no-fund
+          - --no-audit
+        chdir: "{{ pi_release_dir }}"
+      environment:
+        PATH: "{{ pnpm_home }}/bin:{{ ansible_facts['env']['PATH'] }}"
+      changed_when: true
+
+- name: Verify Pi before selecting the release
+  ansible.builtin.command:
+    argv: ["{{ pi_release_dir }}/node_modules/.bin/pi", --version]
+  environment:
+    PATH: "{{ pnpm_home }}/bin:{{ ansible_facts['env']['PATH'] }}"
+  register: pi_verified
+  changed_when: false
+  failed_when: pi_verified.rc != 0 or pi_verified.stdout | trim != pi_version
+  when: not ansible_check_mode
+
+- name: Install the managed Pi launcher
+  ansible.builtin.template:
+    src: pi.sh.j2
+    dest: "{{ pi_agent_dir }}/bin/pi"
+    mode: "0755"
+
+- name: Link Pi into the user binary directory
+  ansible.builtin.file:
+    src: "{{ pi_agent_dir }}/bin/pi"
+    dest: "{{ pi_bin_dir }}/pi"
+    state: link
+    force: "{{ ansible_check_mode }}"
+
+- name: Record the managed Pi installation layout
+  ansible.builtin.copy:
+    content: >-
+      {{ {'kind': 'pi-managed-install', 'schemaVersion': 1, 'layout': 'releases-v1',
+          'entrypoint': {'type': 'symlink', 'path': pi_bin_dir ~ '/pi'}} | to_nice_json }}
+    dest: "{{ pi_install_dir }}/managed-install.json"
+    mode: "0644"
+
+- name: Select the pinned Pi release
+  ansible.builtin.copy:
+    content: "{{ pi_version }}\n"
+    dest: "{{ pi_install_dir }}/current-version"
+    mode: "0644"

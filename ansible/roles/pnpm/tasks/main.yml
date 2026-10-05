@@ -1,0 +1,143 @@
+---
+- name: Install system packages for pnpm
+  ansible.builtin.apt:
+    name: "{{ pnpm_apt_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  become: true
+  tags: [packages]
+
+# Official standalone installer: no Node.js needed. Give its setup command a
+# disposable HOME so it cannot edit the real user's shell profiles.
+# Reconcile the installed version with the pin, including downgrades.
+- name: Require exact pnpm, Node.js and npm releases
+  ansible.builtin.assert:
+    that:
+      - pnpm_version is match('^[0-9]+\.[0-9]+\.[0-9]+$')
+      - pnpm_node_version is match('^[0-9]+\.[0-9]+\.[0-9]+$')
+      - pnpm_npm_version is match('^[0-9]+\.[0-9]+\.[0-9]+$')
+
+- name: Create cache directory
+  ansible.builtin.file:
+    path: "{{ ansible_facts['user_dir'] }}/.cache"
+    state: directory
+    mode: "0700"
+
+- name: Check the installed pnpm version
+  ansible.builtin.command:
+    argv: ["{{ pnpm_home }}/bin/pnpm", --version]
+  register: pnpm_installed
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Determine whether pnpm needs installation
+  ansible.builtin.set_fact:
+    pnpm_needs_install: "{{ pnpm_installed.rc != 0 or pnpm_installed.stdout | trim != pnpm_version }}"
+
+- name: Create an isolated home for pnpm installer profile edits
+  ansible.builtin.file:
+    path: "{{ ansible_facts['user_dir'] }}/.cache/pnpm-installer-home"
+    state: directory
+    mode: "0700"
+  when: pnpm_needs_install
+
+- name: Download pnpm installer
+  ansible.builtin.get_url:
+    url: https://get.pnpm.io/install.sh
+    dest: "{{ ansible_facts['user_dir'] }}/.cache/pnpm-install.sh"
+    mode: "0755"
+  when:
+    - not ansible_check_mode
+    - pnpm_needs_install
+
+- name: Install pnpm
+  ansible.builtin.command:
+    cmd: "sh {{ ansible_facts['user_dir'] }}/.cache/pnpm-install.sh"
+  when:
+    - not ansible_check_mode
+    - pnpm_needs_install
+  changed_when: true
+  environment:
+    PNPM_VERSION: "{{ pnpm_version }}"
+    PNPM_HOME: "{{ pnpm_home }}"
+    HOME: "{{ ansible_facts['user_dir'] }}/.cache/pnpm-installer-home"
+    XDG_CONFIG_HOME: "{{ ansible_facts['user_dir'] }}/.cache/pnpm-installer-home/.config"
+    XDG_DATA_HOME: "{{ ansible_facts['user_dir'] }}/.cache/pnpm-installer-home/.local/share"
+    XDG_STATE_HOME: "{{ ansible_facts['user_dir'] }}/.cache/pnpm-installer-home/.local/state"
+    XDG_CACHE_HOME: "{{ ansible_facts['user_dir'] }}/.cache/pnpm-installer-home/.cache"
+    SHELL: /bin/bash
+
+- name: Check installed Node.js version
+  ansible.builtin.command: "{{ pnpm_home }}/bin/node --version"
+  environment:
+    PNPM_SHIM_BYPASS: "1"
+    PATH: "{{ pnpm_home }}/bin:{{ ansible_facts['env']['PATH'] }}"
+  register: pnpm_node_check
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+# Node.js runtime installs do not include npm. Check it independently.
+- name: Check installed npm version
+  ansible.builtin.command:
+    argv: ["{{ pnpm_home }}/bin/npm", --version]
+  environment:
+    PNPM_SHIM_BYPASS: "1"
+    PATH: "{{ pnpm_home }}/bin:{{ ansible_facts['env']['PATH'] }}"
+  register: pnpm_npm_check
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Install Node.js via pnpm
+  ansible.builtin.command: "{{ pnpm_home }}/bin/pnpm runtime set node {{ pnpm_node_version }} --global"
+  environment:
+    PNPM_HOME: "{{ pnpm_home }}"
+    PATH: "{{ pnpm_home }}/bin:{{ ansible_facts['env']['PATH'] }}"
+  when: >-
+    pnpm_node_check.rc != 0 or
+    pnpm_node_check.stdout | trim != 'v' ~ pnpm_node_version
+  changed_when: true
+
+- name: Install the pinned npm package via pnpm
+  ansible.builtin.command:
+    argv:
+      - "{{ pnpm_home }}/bin/pnpm"
+      - add
+      - --global
+      - "npm@{{ pnpm_npm_version }}"
+      - --ignore-scripts
+  environment:
+    PNPM_HOME: "{{ pnpm_home }}"
+    PATH: "{{ pnpm_home }}/bin:{{ ansible_facts['env']['PATH'] }}"
+  when: pnpm_npm_check.rc != 0 or pnpm_npm_check.stdout | trim != pnpm_npm_version
+  changed_when: true
+
+- name: Verify the selected pnpm, Node.js and npm versions
+  ansible.builtin.command:
+    argv: ["{{ pnpm_home }}/bin/{{ item.name }}", --version]
+  environment:
+    PNPM_SHIM_BYPASS: "1"
+    PATH: "{{ pnpm_home }}/bin:{{ ansible_facts['env']['PATH'] }}"
+  loop:
+    - name: pnpm
+      version: "{{ pnpm_version }}"
+    - name: node
+      version: "v{{ pnpm_node_version }}"
+    - name: npm
+      version: "{{ pnpm_npm_version }}"
+  register: pnpm_verified
+  changed_when: false
+  failed_when: pnpm_verified.rc != 0 or pnpm_verified.stdout | trim != item.version
+  when: not ansible_check_mode
+
+- name: Generate the pnpm shell environment
+  ansible.builtin.include_role:
+    name: shell_environment
+  vars:
+    shell_environment_name: pnpm
+    shell_environment_exports:
+      PNPM_HOME: "{{ pnpm_home }}"
+    shell_environment_paths: ["{{ pnpm_home }}/bin"]

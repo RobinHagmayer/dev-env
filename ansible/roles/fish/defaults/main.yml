@@ -1,0 +1,12 @@
+---
+# Full apt package version, including the Ubuntu codename suffix.
+# Override per host when using a different Ubuntu release. Inspect with apt-cache policy fish.
+fish_version: "4.9.3-1~resolute"
+
+fish_apt_packages:
+  - ca-certificates
+  - python3-debian
+
+# Official Fish 4 stable PPA; key fingerprint published by Launchpad.
+fish_ppa_uri: https://ppa.launchpadcontent.net/fish-shell/release-4/ubuntu
+fish_ppa_key_fingerprint: 88421E703EDC7AF54967DED473C9FCC9E2BB48DA

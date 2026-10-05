@@ -1,0 +1,6 @@
+---
+- name: Install Fish shell from its Ubuntu PPA
+  hosts: workstations
+  roles:
+    - role: fish
+      tags: [fish]

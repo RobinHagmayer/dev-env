@@ -1,0 +1,60 @@
+---
+- name: Install system packages for Go
+  ansible.builtin.apt:
+    name: "{{ go_apt_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  become: true
+  tags: [packages]
+
+- name: Check supported architecture
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['architecture'] == 'x86_64'
+      - go_version is match('^[0-9]+\.[0-9]+\.[0-9]+$')
+    fail_msg: The pinned Go checksum is for linux-amd64 only.
+
+- name: Create directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ go_install_dir }}"
+    - "{{ go_bin_dir }}"
+    - "{{ go_download_dir }}"
+
+- name: Download Go tarball
+  ansible.builtin.get_url:
+    url: "https://go.dev/dl/go{{ go_version }}.linux-amd64.tar.gz"
+    dest: "{{ go_download_dir }}/go{{ go_version }}.linux-amd64.tar.gz"
+    checksum: "sha256:{{ go_sha256 }}"
+    mode: "0644"
+  when: not ansible_check_mode
+
+- name: Unpack Go
+  ansible.builtin.unarchive:
+    src: "{{ go_download_dir }}/go{{ go_version }}.linux-amd64.tar.gz"
+    dest: "{{ go_install_dir }}"
+    remote_src: true
+    extra_opts: [--strip-components=1]
+    creates: "{{ go_install_dir }}/bin/go"
+  when: not ansible_check_mode
+
+- name: Link Go binaries into ~/.local/bin
+  ansible.builtin.file:
+    src: "{{ go_install_dir }}/bin/{{ item }}"
+    dest: "{{ go_bin_dir }}/{{ item }}"
+    state: link
+    force: "{{ ansible_check_mode }}"
+  loop:
+    - go
+    - gofmt
+
+- name: Generate the Go shell environment
+  ansible.builtin.include_role:
+    name: shell_environment
+  vars:
+    shell_environment_name: go
+    shell_environment_paths: ["{{ ansible_facts['user_dir'] }}/go/bin"]
