@@ -80,12 +80,12 @@ blink.cmp fff.nvim kanagawa.nvim lspkind mason-lspconfig
 mason-tool-installer mason.nvim nvim-lspconfig nvim-treesitter nvim-web-devicons
 ```
 
-Use `playbooks/nerd-fonts.yml` in the separate `ansible-playbooks` repository to install Meslo Nerd Fonts. The older dotfiles installer is retained for reference only.
+Use `ansible/playbooks/nerd-fonts.yml` to install Meslo Nerd Fonts. The older dotfiles installer is retained for reference only.
 
 ## Rebuild order
 
 1. Install company-managed software and sign in.
-2. Clone the dotfiles and `ansible-playbooks` repositories. Install developer tools with Ansible; Rust, pnpm and Go also generate their terminal environment fragments.
+2. Clone the dotfiles repository. Install developer tools with the playbooks in `ansible/`; Rust, pnpm and Go also generate their terminal environment fragments.
 3. Back up local startup files, then stow `shell bash fish ghostty` following the dotfiles README. Include other packages such as `uv` after review; resolve existing file conflicts rather than blindly adopting them.
 4. Install remaining APT/Snap/Flatpak applications and global tools. Open Neovim to restore plugins/tools from configuration.
 5. Re-authenticate GitHub, cloud, Docker and other CLIs; restore only approved Bitwarden secrets.

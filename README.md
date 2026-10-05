@@ -19,7 +19,9 @@ parser is needed.
 
 ## Tool installation and environment
 
-Install tools with the separate `ansible-playbooks` repository. Its Rust, pnpm
+Install tools with the playbooks in `ansible/` (run them from that directory,
+e.g. `cd ~/.dotfiles/ansible && uv run ansible-playbook playbooks/dev-tools.yml`).
+Its Rust, pnpm
 and Go roles generate `~/.config/shell/env.d/*.sh` from their installation
 settings. Do not edit those generated files: change the corresponding Ansible
 role defaults and rerun the playbook. Rust uses `~/.local/share/cargo` and

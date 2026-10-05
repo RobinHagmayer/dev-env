@@ -1,6 +1,7 @@
-# ansible-playbooks
+# Ansible playbooks
 
-Personal Ansible playbooks.
+Personal Ansible playbooks, part of the dev-env repository (`~/.dotfiles/ansible`).
+Run every command in this README from this directory.
 
 ## Prerequisites
 
@@ -113,7 +114,7 @@ uv run ansible-playbook playbooks/dev-tools.yml --tags go,zig --ask-become-pass
 uv run ansible-playbook playbooks/dev-tools.yml --skip-tags packages
 ```
 
-Rust, pnpm and Go also generate POSIX environment fragments in `~/.config/shell/env.d`. The dotfiles repository's `shell` package loads them for Bash and its interactive Fish launcher; installation paths and generated exports come from the same role defaults. These files configure terminal environments, not GNOME or systemd services. Rust data lives in `~/.local/share/cargo` (`rust_home`) and `~/.local/share/rustup` (`rust_toolchain_home`). Existing `~/.cargo` and `~/.rustup` directories are moved there, with compatibility symlinks retained for old terminals; the role refuses to merge two existing installations. Rust uses `--no-modify-path`, and pnpm's installer runs with an isolated HOME so neither adds configuration to your real startup files. Rerun `dev-tools.yml --tags rust,pnpm,go` after changing their settings. Removing a tool does not automatically remove its environment fragment.
+Rust, pnpm and Go also generate POSIX environment fragments in `~/.config/shell/env.d`. The `shell` Stow package of this repository (`~/.dotfiles/shell`) loads them for Bash and its interactive Fish launcher; installation paths and generated exports come from the same role defaults. These files configure terminal environments, not GNOME or systemd services. Rust data lives in `~/.local/share/cargo` (`rust_home`) and `~/.local/share/rustup` (`rust_toolchain_home`). Existing `~/.cargo` and `~/.rustup` directories are moved there, with compatibility symlinks retained for old terminals; the role refuses to merge two existing installations. Rust uses `--no-modify-path`, and pnpm's installer runs with an isolated HOME so neither adds configuration to your real startup files. Rerun `dev-tools.yml --tags rust,pnpm,go` after changing their settings. Removing a tool does not automatically remove its environment fragment.
 
 ## Version policy
 
