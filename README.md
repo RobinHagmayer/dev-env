@@ -53,6 +53,27 @@ Install the base packages and developer tools (Rust, Go, Zig, pnpm + Node.js) on
 uv run ansible-playbook playbooks/dev-tools.yml --ask-become-pass
 ```
 
+Install Pi, Claude Code and Codex using their official installers:
+
+```sh
+uv run ansible-playbook playbooks/ai-tools.yml --ask-become-pass
+```
+
+Install only selected tools:
+
+```sh
+uv run ansible-playbook playbooks/ai-tools.yml --tags pi --ask-become-pass
+uv run ansible-playbook playbooks/ai-tools.yml --tags claude,codex --ask-become-pass
+```
+
+These roles install as your normal user, skip existing binaries in `~/.local/bin`, and use each installer's default release rather than pinning versions. Pi pulls in the pnpm role for Node.js and npm. Installer scripts are downloaded into `~/.cache/ansible-installers` before execution; Codex is explicitly non-interactive, and Pi runs without a controlling terminal to prevent prompts or launching the app. A dry run does not download or execute these installers.
+
+Reruns do not upgrade existing tools. Use `pi update`, `claude update`, or Codex's own update mechanism/re-run its official installer. Authentication is a separate manual step; no credentials are managed by these roles. Other installation locations/package managers are not automatically migrated. Make sure `~/.local/bin` is on your shell PATH, e.g. for the current terminal:
+
+```sh
+export PATH="$HOME/.local/bin:$PATH"
+```
+
 Build and install Ghostty's current development (tip) version from its prepared source tarball (pulls in the Zig role):
 
 ```sh

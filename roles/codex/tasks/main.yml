@@ -1,0 +1,46 @@
+---
+- name: Install system packages for Codex
+  ansible.builtin.apt:
+    name: "{{ codex_apt_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  become: true
+  tags: [packages]
+
+- name: Create Codex installer cache directory
+  ansible.builtin.file:
+    path: "{{ codex_installer_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Check for an installed Codex executable
+  ansible.builtin.stat:
+    path: "{{ codex_bin_dir }}/codex"
+    follow: true
+  register: codex_binary
+
+- name: Download the official Codex installer
+  ansible.builtin.get_url:
+    url: https://chatgpt.com/codex/install.sh
+    dest: "{{ codex_installer_dir }}/codex-install.sh"
+    mode: "0644"
+  when:
+    - not ansible_check_mode
+    - not codex_binary.stat.exists
+
+- name: Install Codex with its standalone installer
+  ansible.builtin.command:
+    argv:
+      - sh
+      - "{{ codex_installer_dir }}/codex-install.sh"
+    creates: "{{ codex_bin_dir }}/codex"
+  environment:
+    CODEX_INSTALL_DIR: "{{ codex_bin_dir }}"
+    CODEX_NON_INTERACTIVE: "1"
+
+- name: Verify Codex runs successfully
+  ansible.builtin.command:
+    argv: ["{{ codex_bin_dir }}/codex", --version]
+  changed_when: false
+  when: not ansible_check_mode

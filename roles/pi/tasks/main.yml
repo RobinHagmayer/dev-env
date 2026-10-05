@@ -1,0 +1,55 @@
+---
+- name: Install system packages for Pi
+  ansible.builtin.apt:
+    name: "{{ pi_apt_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  become: true
+  tags: [packages]
+
+- name: Create Pi installation directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ pi_installer_dir }}"
+    - "{{ pi_bin_dir }}"
+
+- name: Check for an installed Pi executable
+  ansible.builtin.stat:
+    path: "{{ pi_bin_dir }}/pi"
+    follow: true
+  register: pi_binary
+
+- name: Download the official Pi installer
+  ansible.builtin.get_url:
+    url: https://pi.dev/install.sh
+    dest: "{{ pi_installer_dir }}/pi-install.sh"
+    mode: "0644"
+  when:
+    - not ansible_check_mode
+    - not pi_binary.stat.exists
+
+# No controlling terminal: the installer cannot prompt, modify shell profiles
+# interactively, or launch Pi. Node.js/npm are provided by the pnpm dependency.
+- name: Install Pi with its managed installer
+  ansible.builtin.command:
+    argv:
+      - setsid
+      - --wait
+      - sh
+      - "{{ pi_installer_dir }}/pi-install.sh"
+    creates: "{{ pi_bin_dir }}/pi"
+  environment:
+    PI_CODING_AGENT_DIR: "{{ pi_agent_dir }}"
+    PATH: "{{ pi_bin_dir }}:{{ pnpm_home }}/bin:{{ ansible_facts['env']['PATH'] }}"
+
+- name: Verify Pi runs successfully
+  ansible.builtin.command:
+    argv: ["{{ pi_bin_dir }}/pi", --version]
+  environment:
+    PATH: "{{ pi_bin_dir }}:{{ pnpm_home }}/bin:{{ ansible_facts['env']['PATH'] }}"
+  changed_when: false
+  when: not ansible_check_mode

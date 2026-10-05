@@ -1,0 +1,11 @@
+---
+# Official installers run as the current user; only system packages need sudo.
+- name: Install AI coding tools
+  hosts: workstations
+  roles:
+    - role: pi
+      tags: [pi]
+    - role: claude_code
+      tags: [claude, claude_code]
+    - role: codex
+      tags: [codex]

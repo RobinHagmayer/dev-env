@@ -1,0 +1,43 @@
+---
+- name: Install system packages for Claude Code
+  ansible.builtin.apt:
+    name: "{{ claude_code_apt_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  become: true
+  tags: [packages]
+
+- name: Create Claude Code installer cache directory
+  ansible.builtin.file:
+    path: "{{ claude_code_installer_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Check for an installed Claude Code executable
+  ansible.builtin.stat:
+    path: "{{ claude_code_bin_dir }}/claude"
+    follow: true
+  register: claude_code_binary
+
+- name: Download the official Claude Code installer
+  ansible.builtin.get_url:
+    url: https://claude.ai/install.sh
+    dest: "{{ claude_code_installer_dir }}/claude-install.sh"
+    mode: "0644"
+  when:
+    - not ansible_check_mode
+    - not claude_code_binary.stat.exists
+
+- name: Install Claude Code with its native installer
+  ansible.builtin.command:
+    argv:
+      - bash
+      - "{{ claude_code_installer_dir }}/claude-install.sh"
+    creates: "{{ claude_code_bin_dir }}/claude"
+
+- name: Verify Claude Code runs successfully
+  ansible.builtin.command:
+    argv: ["{{ claude_code_bin_dir }}/claude", --version]
+  changed_when: false
+  when: not ansible_check_mode
