@@ -1,0 +1,40 @@
+---
+# Official standalone installer: no Node.js needed. It also adds PNPM_HOME to
+# the shell profile. Only installs when pnpm is missing; upgrade with
+# `pnpm self-update`.
+- name: Create cache directory
+  ansible.builtin.file:
+    path: "{{ ansible_facts['user_dir'] }}/.cache"
+    state: directory
+    mode: "0700"
+
+- name: Download pnpm installer
+  ansible.builtin.get_url:
+    url: https://get.pnpm.io/install.sh
+    dest: "{{ ansible_facts['user_dir'] }}/.cache/pnpm-install.sh"
+    mode: "0755"
+
+- name: Install pnpm
+  ansible.builtin.command:
+    cmd: "sh {{ ansible_facts['user_dir'] }}/.cache/pnpm-install.sh"
+    creates: "{{ pnpm_home }}/bin/pnpm"
+  environment:
+    PNPM_VERSION: "{{ pnpm_version }}"
+    PNPM_HOME: "{{ pnpm_home }}"
+
+- name: Check installed Node.js version
+  ansible.builtin.command: "{{ pnpm_home }}/bin/node --version"
+  register: pnpm_node_check
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Install Node.js via pnpm
+  ansible.builtin.command: "{{ pnpm_home }}/bin/pnpm runtime set node {{ pnpm_node_version }} --global"
+  environment:
+    PNPM_HOME: "{{ pnpm_home }}"
+    PATH: "{{ pnpm_home }}/bin:{{ ansible_facts['env']['PATH'] }}"
+  when: >-
+    pnpm_node_check.rc != 0 or
+    not pnpm_node_check.stdout.startswith('v' ~ pnpm_node_version ~ '.')
+  changed_when: true

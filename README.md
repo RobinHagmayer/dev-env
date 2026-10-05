@@ -44,3 +44,22 @@ uv run ansible --version
 ```
 
 Run Ansible commands through `uv run`, e.g. `uv run ansible-playbook playbook.yml`.
+
+## Usage
+
+Install the developer tools (Rust, Go, Zig, pnpm) on this machine:
+
+```sh
+uv run ansible-playbook playbooks/dev-tools.yml --ask-become-pass
+```
+
+`--ask-become-pass` is only needed for the `base` play (apt packages). Run a subset with tags:
+
+```sh
+uv run ansible-playbook playbooks/dev-tools.yml --tags go,zig
+uv run ansible-playbook playbooks/dev-tools.yml --skip-tags base
+```
+
+Tool versions are pinned in `roles/<role>/defaults/main.yml`. Go and Zig also pin a sha256 checksum, so update both when bumping a version.
+
+Lint: `uv run ansible-lint`

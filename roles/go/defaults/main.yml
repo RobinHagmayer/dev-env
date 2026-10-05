@@ -1,0 +1,7 @@
+---
+go_version: "1.27.1"
+# sha256 of go<version>.linux-amd64.tar.gz, from https://go.dev/dl/
+go_sha256: "63d339f0da5ab53635a56f2490a7984dfe12dfcff22ad749f63edaf590168445"
+go_install_dir: "{{ ansible_facts['user_dir'] }}/.local/opt/go-{{ go_version }}"
+go_bin_dir: "{{ ansible_facts['user_dir'] }}/.local/bin"
+go_download_dir: "{{ ansible_facts['user_dir'] }}/.cache/ansible-downloads"

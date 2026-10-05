@@ -1,0 +1,14 @@
+---
+base_packages_names:
+  - btop
+  - build-essential # C linker, required by the Rust toolchain
+  - ca-certificates
+  - curl
+  - fzf
+  - git
+  - jq
+  - tmux
+  - tree
+  - unzip
+  - wget
+  - xz-utils # needed to unpack the Zig tarball

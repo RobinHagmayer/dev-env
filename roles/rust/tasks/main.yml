@@ -1,0 +1,19 @@
+---
+# rustup installs cargo, rustc, rustfmt, clippy and the docs (default profile)
+# and adds ~/.cargo/bin to the shell profile. Update later with `rustup update`.
+- name: Create cache directory
+  ansible.builtin.file:
+    path: "{{ ansible_facts['user_dir'] }}/.cache"
+    state: directory
+    mode: "0700"
+
+- name: Download rustup installer
+  ansible.builtin.get_url:
+    url: https://sh.rustup.rs
+    dest: "{{ ansible_facts['user_dir'] }}/.cache/rustup-init.sh"
+    mode: "0755"
+
+- name: Install Rust toolchain via rustup
+  ansible.builtin.command:
+    cmd: "sh {{ ansible_facts['user_dir'] }}/.cache/rustup-init.sh -y --default-toolchain {{ rust_toolchain }}"
+    creates: "{{ rust_home }}/bin/rustup"
