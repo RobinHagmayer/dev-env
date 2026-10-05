@@ -53,11 +53,15 @@ Install the base packages and developer tools (Rust, Go, Zig, pnpm + Node.js) on
 uv run ansible-playbook playbooks/dev-tools.yml --ask-become-pass
 ```
 
-Build and install Ghostty from source (pulls in the Zig role):
+Build and install Ghostty's current development (tip) version from its prepared source tarball (pulls in the Zig role):
 
 ```sh
 uv run ansible-playbook playbooks/ghostty.yml --ask-become-pass
 ```
+
+With `ghostty_version: "tip"` (the default), each run checks GitHub's tip release metadata, verifies the archive against its SHA256 digest, and rebuilds only when the source or build settings change or the binary is missing. New tip archives get separate cache/source paths to avoid reusing stale source. Tip requires internet access to GitHub, is subject to GitHub API rate limits, and is not a pinned/reproducible release. Old source/cache directories are retained. When building `gtk4-layer-shell` from source, the role uses `patchelf` to add `$ORIGIN/../lib` to Ghostty's library search path, so the installed binary finds its bundled library from both terminals and the desktop launcher. This repair also runs when no rebuild is needed.
+
+To return to stable, set `ghostty_version` to a release such as `"1.3.1"` and set its matching `ghostty_sha256` (the saved default checksum is for 1.3.1). The Ghostty role passes its required Zig version/checksum to the Zig dependency. Current tip needs Zig 0.16.0 according to its `build.zig.zon` (the website still lists 0.15.2); stable 1.3.x uses 0.15.2. Tip's requirement may change; update `ghostty_zig_version` and `ghostty_zig_sha256` together, checking the source's `build.zig.zon` as well as the [build documentation](https://ghostty.org/docs/install/build).
 
 Build Neovim from source and install it as a DEB package (so `dpkg`/`apt remove neovim` removes it cleanly):
 
@@ -72,7 +76,7 @@ uv run ansible-playbook playbooks/dev-tools.yml --tags go,zig --ask-become-pass
 uv run ansible-playbook playbooks/dev-tools.yml --skip-tags packages
 ```
 
-Tool versions are configured in `roles/<role>/defaults/main.yml`. Neovim is pinned by git tag. Go, Zig and Ghostty also pin a sha256 checksum, so update both when bumping a version. Each Ghostty release needs one specific Zig version (`ghostty_zig_version`); the Ghostty role fails early if the installed Zig differs.
+Tool versions are configured in `roles/<role>/defaults/main.yml`. Neovim is pinned by git tag. Go, Zig and stable Ghostty releases also pin a sha256 checksum, so update both when bumping a version. Ghostty tip instead resolves the current archive checksum from GitHub. Each Ghostty release needs one specific Zig version (`ghostty_zig_version`); the Ghostty role fails early if the installed Zig differs.
 
 Rerunning Neovim checks the installed DEB version, so it reinstalls after `apt remove neovim` and applies version changes (including downgrades). Ghostty rebuilds when its binary is missing or its recorded build settings differ; existing version-only markers trigger a one-time rebuild. Rust ensures `rust_toolchain` is installed and selected as the default. The default `stable` follows a release channel rather than pinning a version; existing toolchains are updated manually with `rustup update`.
 

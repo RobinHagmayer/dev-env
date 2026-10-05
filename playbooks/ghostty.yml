@@ -1,5 +1,6 @@
 ---
-# Builds Ghostty from the release tarball. Pulls in the zig role as a dependency.
+# Builds Ghostty from the prepared tip or stable source tarball.
+# Pulls in the zig role as a dependency.
 - name: Build and install Ghostty
   hosts: workstations
   roles:

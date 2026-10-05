@@ -9,16 +9,27 @@ ghostty_apt_packages:
   - libgtk-4-dev
   - libxml2-utils
   - pkg-config
+  - patchelf # makes the installed binary find the bundled gtk4-layer-shell library
 
-ghostty_version: "1.3.1"
+# "tip" follows the development release; a version such as "1.3.1" pins a stable release.
+ghostty_version: "tip"
+# Only used for stable releases (this checksum is for 1.3.1).
+# Tip's current SHA256 digest is fetched from the GitHub release API.
 # sha256 of ghostty-<version>.tar.gz, computed from
 # https://release.files.ghostty.org/<version>/ (no published checksum file).
 ghostty_sha256: "3349d25600ffbda281197a18314f7d18791969cffe9474f0ff16a45a9ebfccdb"
-# Each Ghostty release builds with exactly one Zig version.
-ghostty_zig_version: "0.15.2"
+# Tip's current build.zig.zon requires 0.16.0 (the web docs still list 0.15.2).
+# Stable 1.3.x requires 0.15.2. Update version and checksum together when needed.
+ghostty_zig_version: "{{ '0.16.0' if ghostty_version == 'tip' else '0.15.2' }}"
+ghostty_zig_sha256: >-
+  {{ {
+       '0.16.0': '70e49664a74374b48b51e6f3fdfbf437f6395d42509050588bd49abe52ba3d00',
+       '0.15.2': '02aa270f183da276e5b5920b1dac44a63f1a49e55050ebde3aecc9eb82f93239'
+     }[ghostty_zig_version] }}
 
 ghostty_prefix: "{{ ansible_facts['user_dir'] }}/.local"
-ghostty_src_dir: "{{ ansible_facts['user_dir'] }}/.local/src/ghostty-{{ ghostty_version }}"
+# Tip sources are isolated by archive checksum so new tip builds cannot reuse old sources.
+ghostty_src_dir: "{{ ansible_facts['user_dir'] }}/.local/src/ghostty-{{ ghostty_source_id }}"
 ghostty_download_dir: "{{ ansible_facts['user_dir'] }}/.cache/ansible-downloads"
 ghostty_zig: "{{ ansible_facts['user_dir'] }}/.local/bin/zig"
 ghostty_build_flags:

@@ -8,6 +8,45 @@
   become: true
   tags: [packages]
 
+- name: Resolve pinned Ghostty release source
+  ansible.builtin.set_fact:
+    ghostty_source_url: "https://release.files.ghostty.org/{{ ghostty_version }}/ghostty-{{ ghostty_version }}.tar.gz"
+    ghostty_source_checksum: "sha256:{{ ghostty_sha256 }}"
+    ghostty_source_id: "{{ ghostty_version }}"
+  when: ghostty_version != 'tip'
+
+- name: Resolve the current Ghostty tip source
+  when: ghostty_version == 'tip'
+  block:
+    - name: Fetch Ghostty tip release metadata
+      ansible.builtin.uri:
+        url: https://api.github.com/repos/ghostty-org/ghostty/releases/tags/tip
+        return_content: true
+        headers:
+          Accept: application/vnd.github+json
+      register: ghostty_tip_release
+      changed_when: false
+      check_mode: false
+
+    - name: Find the prepared tip source archive
+      ansible.builtin.set_fact:
+        ghostty_tip_assets: >-
+          {{ ghostty_tip_release.json.assets
+             | selectattr('name', 'equalto', 'ghostty-source.tar.gz') | list }}
+
+    - name: Check that tip source is available with a SHA256 checksum
+      ansible.builtin.assert:
+        that:
+          - ghostty_tip_assets | length == 1
+          - ghostty_tip_assets[0].digest | default('', true) is match('^sha256:[0-9a-f]{64}$')
+        fail_msg: GitHub's tip release must contain ghostty-source.tar.gz with a SHA256 digest.
+
+    - name: Use the current tip archive and checksum
+      ansible.builtin.set_fact:
+        ghostty_source_url: "{{ ghostty_tip_assets[0].browser_download_url }}"
+        ghostty_source_checksum: "{{ ghostty_tip_assets[0].digest }}"
+        ghostty_source_id: "tip-{{ ghostty_tip_assets[0].digest.split(':')[1] }}"
+
 - name: Create directories
   ansible.builtin.file:
     path: "{{ item }}"
@@ -19,18 +58,21 @@
 
 - name: Download Ghostty source tarball
   ansible.builtin.get_url:
-    url: "https://release.files.ghostty.org/{{ ghostty_version }}/ghostty-{{ ghostty_version }}.tar.gz"
-    dest: "{{ ghostty_download_dir }}/ghostty-{{ ghostty_version }}.tar.gz"
-    checksum: "sha256:{{ ghostty_sha256 }}"
+    url: "{{ ghostty_source_url }}"
+    dest: "{{ ghostty_download_dir }}/ghostty-{{ ghostty_source_id }}.tar.gz"
+    checksum: "{{ ghostty_source_checksum }}"
     mode: "0644"
+  # A dry run cannot create the cache/source directories needed below.
+  when: not ansible_check_mode
 
 - name: Unpack Ghostty source
   ansible.builtin.unarchive:
-    src: "{{ ghostty_download_dir }}/ghostty-{{ ghostty_version }}.tar.gz"
+    src: "{{ ghostty_download_dir }}/ghostty-{{ ghostty_source_id }}.tar.gz"
     dest: "{{ ghostty_src_dir }}"
     remote_src: true
     extra_opts: [--strip-components=1]
     creates: "{{ ghostty_src_dir }}/build.zig"
+  when: not ansible_check_mode
 
 - name: Check Zig version
   ansible.builtin.command: "{{ ghostty_zig }} version"
@@ -44,14 +86,14 @@
     that: ghostty_zig_check.stdout | trim == ghostty_zig_version
     fail_msg: >-
       Ghostty {{ ghostty_version }} needs Zig {{ ghostty_zig_version }},
-      found {{ ghostty_zig_check.stdout | trim }}. Set zig_version and
-      zig_sha256 for the zig role accordingly.
+      found {{ ghostty_zig_check.stdout | trim }}. Check ghostty_zig_version,
+      ghostty_zig_sha256 and the ghostty_zig executable path.
   when: not ansible_check_mode
 
 - name: Calculate Ghostty build signature
   ansible.builtin.set_fact:
     ghostty_build_signature: >-
-      {{ [ghostty_version, ghostty_sha256, ghostty_prefix,
+      {{ [ghostty_version, ghostty_source_checksum, ghostty_prefix,
           ghostty_build_flags, ghostty_zig, ghostty_zig_version]
          | to_json | hash('sha256') }}
 
@@ -91,3 +133,29 @@
         content: "{{ ghostty_build_signature }}\n"
         dest: "{{ ghostty_prefix }}/.ghostty-build"
         mode: "0644"
+
+# Keep this outside the build block so reruns also repair existing installs.
+- name: Ensure Ghostty can find the bundled GTK layer shell library
+  when:
+    - not ansible_check_mode
+    - "'-fno-sys=gtk4-layer-shell' in ghostty_build_flags"
+  block:
+    - name: Read the installed Ghostty library search path
+      ansible.builtin.command:
+        argv:
+          - patchelf
+          - --print-rpath
+          - "{{ ghostty_prefix }}/bin/ghostty"
+      register: ghostty_rpath
+      changed_when: false
+
+    - name: Add the installation library directory to Ghostty's search path
+      ansible.builtin.command:
+        argv:
+          - patchelf
+          - --set-rpath
+          - "{{ '$ORIGIN/../lib' ~ (':' ~ ghostty_rpath.stdout if ghostty_rpath.stdout | length > 0 else '') }}"
+          - "{{ ghostty_prefix }}/bin/ghostty"
+        expand_argument_vars: false
+      when: "'$ORIGIN/../lib' not in ghostty_rpath.stdout.split(':')"
+      changed_when: true
