@@ -1,4 +1,7 @@
 ---
+pnpm_apt_packages:
+  - ca-certificates # HTTPS downloads
+  - curl # used by the pnpm installer
 pnpm_version: "12.9.1"
 # Node.js is managed by pnpm itself (`pnpm runtime`); pinned by major version.
 pnpm_node_version: "24"

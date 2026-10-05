@@ -1,16 +1,13 @@
 ---
-# System packages need root, so they live in their own play. Everything else
-# installs into the user's home and runs without sudo.
-- name: Install system prerequisites
-  hosts: workstations
-  become: true
-  tags: [base]
-  roles:
-    - base_packages
-
-- name: Install developer tools
+# Roles that install system packages use `become` on those tasks only (tagged
+# `packages`), everything else installs into the user's home without sudo.
+# Each role lists all of its own requirements; none relies on another role.
+- name: Install base packages and developer tools
   hosts: workstations
   roles:
+    - role: base_packages
+      become: true
+      tags: [base, packages]
     - role: rust
       tags: [rust]
     - role: go

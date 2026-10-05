@@ -1,0 +1,68 @@
+---
+- name: Install system packages for Ghostty
+  ansible.builtin.apt:
+    name: "{{ ghostty_apt_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  become: true
+  tags: [packages]
+
+- name: Create directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ ghostty_src_dir }}"
+    - "{{ ghostty_download_dir }}"
+
+- name: Download Ghostty source tarball
+  ansible.builtin.get_url:
+    url: "https://release.files.ghostty.org/{{ ghostty_version }}/ghostty-{{ ghostty_version }}.tar.gz"
+    dest: "{{ ghostty_download_dir }}/ghostty-{{ ghostty_version }}.tar.gz"
+    checksum: "sha256:{{ ghostty_sha256 }}"
+    mode: "0644"
+
+- name: Unpack Ghostty source
+  ansible.builtin.unarchive:
+    src: "{{ ghostty_download_dir }}/ghostty-{{ ghostty_version }}.tar.gz"
+    dest: "{{ ghostty_src_dir }}"
+    remote_src: true
+    extra_opts: [--strip-components=1]
+    creates: "{{ ghostty_src_dir }}/build.zig"
+
+- name: Check Zig version
+  ansible.builtin.command: "{{ ghostty_zig }} version"
+  register: ghostty_zig_check
+  changed_when: false
+  failed_when: ghostty_zig_check.rc != 0 and not ansible_check_mode
+  check_mode: false
+
+- name: Check Zig version matches what Ghostty requires
+  ansible.builtin.assert:
+    that: ghostty_zig_check.stdout | trim == ghostty_zig_version
+    fail_msg: >-
+      Ghostty {{ ghostty_version }} needs Zig {{ ghostty_zig_version }},
+      found {{ ghostty_zig_check.stdout | trim }}. Set zig_version and
+      zig_sha256 for the zig role accordingly.
+  when: not ansible_check_mode
+
+- name: Check for an existing build of this version
+  ansible.builtin.stat:
+    path: "{{ ghostty_src_dir }}/.installed"
+  register: ghostty_installed
+
+- name: Build and install Ghostty
+  ansible.builtin.command:
+    cmd: "{{ ghostty_zig }} build -p {{ ghostty_prefix }} {{ ghostty_build_flags | join(' ') }}"
+    chdir: "{{ ghostty_src_dir }}"
+  when: not ghostty_installed.stat.exists
+  changed_when: true
+
+- name: Record the installed version
+  ansible.builtin.copy:
+    content: "{{ ghostty_version }}\n"
+    dest: "{{ ghostty_src_dir }}/.installed"
+    mode: "0644"
+    force: false

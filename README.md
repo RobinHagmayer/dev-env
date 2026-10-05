@@ -47,19 +47,25 @@ Run Ansible commands through `uv run`, e.g. `uv run ansible-playbook playbook.ym
 
 ## Usage
 
-Install the developer tools (Rust, Go, Zig, pnpm) on this machine:
+Install the base packages and developer tools (Rust, Go, Zig, pnpm + Node.js) on this machine:
 
 ```sh
 uv run ansible-playbook playbooks/dev-tools.yml --ask-become-pass
 ```
 
-`--ask-become-pass` is only needed for the `base` play (apt packages). Run a subset with tags:
+Build and install Ghostty from source (pulls in the Zig role):
 
 ```sh
-uv run ansible-playbook playbooks/dev-tools.yml --tags go,zig
-uv run ansible-playbook playbooks/dev-tools.yml --skip-tags base
+uv run ansible-playbook playbooks/ghostty.yml --ask-become-pass
 ```
 
-Tool versions are pinned in `roles/<role>/defaults/main.yml`. Go and Zig also pin a sha256 checksum, so update both when bumping a version.
+Every role installs the system packages it needs itself (tasks tagged `packages`, run with sudo), so each role works on its own. Run a subset with tags, and skip the sudo tasks when the packages are already there:
+
+```sh
+uv run ansible-playbook playbooks/dev-tools.yml --tags go,zig --ask-become-pass
+uv run ansible-playbook playbooks/dev-tools.yml --skip-tags packages
+```
+
+Tool versions are pinned in `roles/<role>/defaults/main.yml`. Go, Zig and Ghostty also pin a sha256 checksum, so update both when bumping a version. Each Ghostty release needs one specific Zig version (`ghostty_zig_version`); the Ghostty role fails early if the installed Zig differs.
 
 Lint: `uv run ansible-lint`

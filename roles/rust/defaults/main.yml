@@ -1,3 +1,7 @@
 ---
+rust_apt_packages:
+  - build-essential # C linker, required by the Rust toolchain
+  - ca-certificates # HTTPS downloads
+  - curl # used by the rustup installer
 rust_toolchain: stable
 rust_home: "{{ ansible_facts['user_dir'] }}/.cargo"

@@ -1,7 +1,8 @@
 ---
+# General-purpose tools. Packages a specific tool needs to be installed or
+# built are listed in that tool's role, not here.
 base_packages_names:
   - btop
-  - build-essential # C linker, required by the Rust toolchain
   - ca-certificates
   - curl
   - fzf
@@ -11,4 +12,3 @@ base_packages_names:
   - tree
   - unzip
   - wget
-  - xz-utils # needed to unpack the Zig tarball

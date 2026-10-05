@@ -1,4 +1,6 @@
 ---
+go_apt_packages:
+  - ca-certificates # HTTPS downloads
 go_version: "1.27.1"
 # sha256 of go<version>.linux-amd64.tar.gz, from https://go.dev/dl/
 go_sha256: "63d339f0da5ab53635a56f2490a7984dfe12dfcff22ad749f63edaf590168445"

@@ -1,0 +1,26 @@
+---
+# Packages from https://ghostty.org/docs/install/build (Debian and Ubuntu).
+# libgtk4-layer-shell-dev is not packaged on Ubuntu 24.04, so it is built from
+# source via -fno-sys=gtk4-layer-shell instead (see ghostty_build_flags).
+ghostty_apt_packages:
+  - ca-certificates # HTTPS downloads
+  - gettext
+  - libadwaita-1-dev
+  - libgtk-4-dev
+  - libxml2-utils
+  - pkg-config
+
+ghostty_version: "1.3.1"
+# sha256 of ghostty-<version>.tar.gz, computed from
+# https://release.files.ghostty.org/<version>/ (no published checksum file).
+ghostty_sha256: "3349d25600ffbda281197a18314f7d18791969cffe9474f0ff16a45a9ebfccdb"
+# Each Ghostty release builds with exactly one Zig version.
+ghostty_zig_version: "0.15.2"
+
+ghostty_prefix: "{{ ansible_facts['user_dir'] }}/.local"
+ghostty_src_dir: "{{ ansible_facts['user_dir'] }}/.local/src/ghostty-{{ ghostty_version }}"
+ghostty_download_dir: "{{ ansible_facts['user_dir'] }}/.cache/ansible-downloads"
+ghostty_zig: "{{ ansible_facts['user_dir'] }}/.local/bin/zig"
+ghostty_build_flags:
+  - -Doptimize=ReleaseFast
+  - -fno-sys=gtk4-layer-shell
