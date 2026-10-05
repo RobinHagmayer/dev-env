@@ -8,64 +8,91 @@
   become: true
   tags: [packages]
 
-# rustup installs cargo, rustc, rustfmt, clippy and the docs (default profile)
-# and adds ~/.cargo/bin to the shell profile. Existing toolchains are not
-# automatically updated; update later with `rustup update`.
-- name: Create cache directory
-  ansible.builtin.file:
-    path: "{{ ansible_facts['user_dir'] }}/.cache"
-    state: directory
-    mode: "0700"
+- name: Migrate legacy Rust directories to XDG locations
+  ansible.builtin.include_tasks: migrate-home.yml
+  loop:
+    - source: "{{ ansible_facts['user_dir'] }}/.cargo"
+      destination: "{{ rust_home }}"
+    - source: "{{ ansible_facts['user_dir'] }}/.rustup"
+      destination: "{{ rust_toolchain_home }}"
+  loop_control:
+    loop_var: rust_directory
+    label: "{{ rust_directory.source }}"
+  when: rust_directory.source != rust_directory.destination
 
-- name: Download rustup installer
-  ansible.builtin.get_url:
-    url: https://sh.rustup.rs
-    dest: "{{ ansible_facts['user_dir'] }}/.cache/rustup-init.sh"
-    mode: "0755"
-
-- name: Install Rust toolchain via rustup
-  ansible.builtin.command:
-    cmd: "sh {{ ansible_facts['user_dir'] }}/.cache/rustup-init.sh -y --default-toolchain {{ rust_toolchain }}"
-    creates: "{{ rust_home }}/bin/rustup"
+- name: Configure and install Rust with explicit tool homes
   environment:
     CARGO_HOME: "{{ rust_home }}"
+    RUSTUP_HOME: "{{ rust_toolchain_home }}"
+  block:
+    - name: Create cache directory
+      ansible.builtin.file:
+        path: "{{ ansible_facts['user_dir'] }}/.cache"
+        state: directory
+        mode: "0700"
 
-- name: List installed Rust toolchains
-  ansible.builtin.command: "{{ rust_home }}/bin/rustup toolchain list"
-  register: rust_toolchains
-  changed_when: false
-  failed_when: rust_toolchains.rc != 0 and not ansible_check_mode
-  check_mode: false
+    - name: Check for an installed rustup executable
+      ansible.builtin.stat:
+        path: "{{ rust_home }}/bin/rustup"
+      register: rust_binary
 
-- name: Ensure the requested Rust toolchain is installed
-  ansible.builtin.command:
-    argv:
-      - "{{ rust_home }}/bin/rustup"
-      - toolchain
-      - install
-      - "{{ rust_toolchain }}"
-      - --profile
-      - default
-  when: >-
-    rust_toolchains.stdout_lines | select('match',
-      '^' ~ (rust_toolchain | regex_escape) ~ '(-|\\s|$)') | list | length == 0
-  changed_when: true
+    - name: Download rustup installer
+      ansible.builtin.get_url:
+        url: https://sh.rustup.rs
+        dest: "{{ ansible_facts['user_dir'] }}/.cache/rustup-init.sh"
+        mode: "0755"
+      when:
+        - not ansible_check_mode
+        - not rust_binary.stat.exists
 
-- name: Check the default Rust toolchain
-  ansible.builtin.command: "{{ rust_home }}/bin/rustup default"
-  register: rust_default_toolchain
-  changed_when: false
-  failed_when: rust_default_toolchain.rc not in [0, 1] and not ansible_check_mode
-  check_mode: false
+    - name: Install Rust without modifying shell startup files
+      ansible.builtin.command:
+        argv:
+          - sh
+          - "{{ ansible_facts['user_dir'] }}/.cache/rustup-init.sh"
+          - -y
+          - --no-modify-path
+          - --default-toolchain
+          - "{{ rust_toolchain }}"
+        creates: "{{ rust_home }}/bin/rustup"
 
-- name: Select the requested Rust toolchain as the default
-  ansible.builtin.command:
-    argv:
-      - "{{ rust_home }}/bin/rustup"
-      - default
-      - "{{ rust_toolchain }}"
-  when: >-
-    rust_default_toolchain.rc != 0 or
-    not (rust_default_toolchain.stdout is match(
-      '^' ~ (rust_toolchain | regex_escape) ~ '(-|\\s|$)'))
-  changed_when: true
+    - name: List installed Rust toolchains
+      ansible.builtin.command: "{{ rust_home }}/bin/rustup toolchain list"
+      register: rust_toolchains
+      changed_when: false
+      failed_when: rust_toolchains.rc != 0 and not ansible_check_mode
+      check_mode: false
+
+    - name: Ensure the requested Rust toolchain is installed
+      ansible.builtin.command:
+        argv: ["{{ rust_home }}/bin/rustup", toolchain, install, "{{ rust_toolchain }}", --profile, default]
+      when: >-
+        rust_toolchains.stdout_lines | select('match',
+          '^' ~ (rust_toolchain | regex_escape) ~ '(-|\\s|$)') | list | length == 0
+      changed_when: true
+
+    - name: Check the default Rust toolchain
+      ansible.builtin.command: "{{ rust_home }}/bin/rustup default"
+      register: rust_default_toolchain
+      changed_when: false
+      failed_when: rust_default_toolchain.rc not in [0, 1] and not ansible_check_mode
+      check_mode: false
+
+    - name: Select the requested Rust toolchain as the default
+      ansible.builtin.command:
+        argv: ["{{ rust_home }}/bin/rustup", default, "{{ rust_toolchain }}"]
+      when: >-
+        rust_default_toolchain.rc != 0 or
+        not (rust_default_toolchain.stdout is match(
+          '^' ~ (rust_toolchain | regex_escape) ~ '(-|\\s|$)'))
+      changed_when: true
+
+- name: Generate the Rust shell environment
+  ansible.builtin.include_role:
+    name: shell_environment
+  vars:
+    shell_environment_name: rust
+    shell_environment_exports:
+      CARGO_HOME: "{{ rust_home }}"
+      RUSTUP_HOME: "{{ rust_toolchain_home }}"
+    shell_environment_paths: ["{{ rust_home }}/bin"]

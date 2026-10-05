@@ -8,20 +8,35 @@
   become: true
   tags: [packages]
 
-# Official standalone installer: no Node.js needed. It also adds PNPM_HOME to
-# the shell profile. Only installs when pnpm is missing; upgrade with
-# `pnpm self-update`.
+# Official standalone installer: no Node.js needed. Give its setup command a
+# disposable HOME so it cannot edit the real user's shell profiles.
+# Only installs when pnpm is missing; upgrade with `pnpm self-update`.
 - name: Create cache directory
   ansible.builtin.file:
     path: "{{ ansible_facts['user_dir'] }}/.cache"
     state: directory
     mode: "0700"
 
+- name: Check for an installed pnpm executable
+  ansible.builtin.stat:
+    path: "{{ pnpm_home }}/bin/pnpm"
+  register: pnpm_binary
+
+- name: Create an isolated home for pnpm installer profile edits
+  ansible.builtin.file:
+    path: "{{ ansible_facts['user_dir'] }}/.cache/pnpm-installer-home"
+    state: directory
+    mode: "0700"
+  when: not pnpm_binary.stat.exists
+
 - name: Download pnpm installer
   ansible.builtin.get_url:
     url: https://get.pnpm.io/install.sh
     dest: "{{ ansible_facts['user_dir'] }}/.cache/pnpm-install.sh"
     mode: "0755"
+  when:
+    - not ansible_check_mode
+    - not pnpm_binary.stat.exists
 
 - name: Install pnpm
   ansible.builtin.command:
@@ -30,6 +45,12 @@
   environment:
     PNPM_VERSION: "{{ pnpm_version }}"
     PNPM_HOME: "{{ pnpm_home }}"
+    HOME: "{{ ansible_facts['user_dir'] }}/.cache/pnpm-installer-home"
+    XDG_CONFIG_HOME: "{{ ansible_facts['user_dir'] }}/.cache/pnpm-installer-home/.config"
+    XDG_DATA_HOME: "{{ ansible_facts['user_dir'] }}/.cache/pnpm-installer-home/.local/share"
+    XDG_STATE_HOME: "{{ ansible_facts['user_dir'] }}/.cache/pnpm-installer-home/.local/state"
+    XDG_CACHE_HOME: "{{ ansible_facts['user_dir'] }}/.cache/pnpm-installer-home/.cache"
+    SHELL: /bin/bash
 
 - name: Check installed Node.js version
   ansible.builtin.command: "{{ pnpm_home }}/bin/node --version"
@@ -47,3 +68,12 @@
     pnpm_node_check.rc != 0 or
     not pnpm_node_check.stdout.startswith('v' ~ pnpm_node_version ~ '.')
   changed_when: true
+
+- name: Generate the pnpm shell environment
+  ansible.builtin.include_role:
+    name: shell_environment
+  vars:
+    shell_environment_name: pnpm
+    shell_environment_exports:
+      PNPM_HOME: "{{ pnpm_home }}"
+    shell_environment_paths: ["{{ pnpm_home }}/bin"]

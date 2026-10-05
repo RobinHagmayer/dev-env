@@ -4,4 +4,5 @@ rust_apt_packages:
   - ca-certificates # HTTPS downloads
   - curl # used by the rustup installer
 rust_toolchain: stable
-rust_home: "{{ ansible_facts['user_dir'] }}/.cargo"
+rust_home: "{{ ansible_facts['user_dir'] }}/.local/share/cargo"
+rust_toolchain_home: "{{ ansible_facts['user_dir'] }}/.local/share/rustup"

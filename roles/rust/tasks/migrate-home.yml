@@ -1,0 +1,53 @@
+---
+- name: Inspect the legacy Rust directory
+  ansible.builtin.stat:
+    path: "{{ rust_directory.source }}"
+  register: rust_legacy_directory
+
+- name: Inspect the XDG Rust directory
+  ansible.builtin.stat:
+    path: "{{ rust_directory.destination }}"
+  register: rust_xdg_directory
+
+# A directory is migrated; a link to the XDG location is our own earlier
+# compatibility link. Anything else (a link elsewhere, a file) is the user's.
+- name: Refuse to replace an unrelated legacy Rust path
+  ansible.builtin.assert:
+    that: >-
+      rust_legacy_directory.stat.isdir | default(false) or
+      (rust_legacy_directory.stat.islnk | default(false) and
+       rust_legacy_directory.stat.lnk_source | default('') == rust_directory.destination)
+    fail_msg: >-
+      {{ rust_directory.source }} exists but is neither a directory nor a link to
+      {{ rust_directory.destination }}. Resolve it manually; this role will not replace it.
+  when: rust_legacy_directory.stat.exists
+
+- name: Refuse to merge two existing Rust installations
+  ansible.builtin.assert:
+    that: not rust_xdg_directory.stat.exists
+    fail_msg: >-
+      Both {{ rust_directory.source }} and {{ rust_directory.destination }} exist.
+      Resolve them manually; this role will not overwrite or merge installations.
+  when: rust_legacy_directory.stat.isdir | default(false)
+
+- name: Create the XDG Rust parent directory
+  ansible.builtin.file:
+    path: "{{ rust_directory.destination | dirname }}"
+    state: directory
+    mode: "0755"
+
+- name: Move the existing Rust directory to its XDG location
+  ansible.builtin.command:
+    argv: [mv, "{{ rust_directory.source }}", "{{ rust_directory.destination }}"]
+  when: rust_legacy_directory.stat.isdir | default(false)
+  changed_when: true
+
+# Keep old PATH entries and installer-created env files working while existing
+# terminals are still running. The actual data lives in the XDG directories.
+- name: Keep a compatibility link for the legacy Rust location
+  ansible.builtin.file:
+    src: "{{ rust_directory.destination }}"
+    dest: "{{ rust_directory.source }}"
+    state: link
+    force: true
+  when: not (ansible_check_mode and rust_legacy_directory.stat.isdir | default(false))
