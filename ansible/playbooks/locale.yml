@@ -1,0 +1,7 @@
+---
+# Generates the German locale. Pair with `stow --no-folding locale` from the repo root.
+- name: Provide the German regional-format locale
+  hosts: workstations
+  roles:
+    - role: locale
+      tags: [locale]
