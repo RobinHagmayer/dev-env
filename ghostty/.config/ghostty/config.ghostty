@@ -1,0 +1,4 @@
+font-family = "MesloLGS Nerd Font Mono"
+font-size = 14
+maximize = true
+command = shell:exec "$HOME/.local/bin/interactive-shell"

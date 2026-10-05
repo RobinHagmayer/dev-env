@@ -1,0 +1,9 @@
+#!/bin/sh
+# Load only our explicit environment, not Bash login/interactive startup files.
+# This is the terminal's shell, so never fail hard: a broken fragment or a
+# missing Fish must still leave a usable shell instead of a closing window.
+env_file="${XDG_CONFIG_HOME:-$HOME/.config}/shell/env.sh"
+[ -r "$env_file" ] && . "$env_file"
+command -v fish >/dev/null 2>&1 && exec fish "$@"
+echo "interactive-shell: fish not found, starting bash" >&2
+exec bash "$@"

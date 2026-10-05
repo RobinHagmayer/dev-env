@@ -5,17 +5,12 @@
   "enabledModels": [
     "openai-codex/gpt-6-astra",
     "openai-codex/gpt-6-luna",
-    "openai-codex/gpt-6.1-sol"
+    "openai-codex/gpt-6.1-sol",
+    "openai-codex/gpt-5.6-luna"
   ],
-  "npmCommand": [
-    "pnpm"
-  ],
-  "packages": [
-    "git:github.com/aliou/pi-guardrails",
-    "npm:@plannotator/pi-extension"
-  ],
+  "npmCommand": ["pnpm"],
   "hideThinkingBlock": false,
-  "theme": "dark",
+  "theme": "custom-pi-kanagawa-wave",
   "showCacheMissNotices": true,
   "collapseChangelog": true,
   "enableInstallTelemetry": false,

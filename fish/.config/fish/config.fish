@@ -1,9 +1,7 @@
+# Tool environment is inherited from interactive-shell or Bash.
+# Keep this file focused on interactive preferences, not exported tool paths.
 if status is-interactive
-    # Commands to run in interactive sessions can go here
     set -g fish_greeting
+    alias cp="cp -i"
+    alias mv="mv -i"
 end
-
-alias nnvim="NVIM_APPNAME=nightly-nvim nvim"
-alias cp="cp -i"
-alias mv="mv -i"
-

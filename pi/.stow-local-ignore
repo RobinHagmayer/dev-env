@@ -1,0 +1,13 @@
+# A package-local file replaces Stow's default ignore list.
+\.git
+\.gitignore
+^/README.*
+^/LICENSE.*
+^/COPYING
+
+# Preferences are applied, never linked into HOME.
+^/settings\.template\.json$
+^/apply-settings\.sh$
+
+# Legacy extensions remain available for review, but are not activated by Stow.
+^/\.pi/agent/extensions

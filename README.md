@@ -8,11 +8,60 @@ I use GNU stow for managing the symlinks.
 From the repo root, stow the packages used on this machine:
 
 ```sh
-stow --no-folding agents
-stow env_vars fish git ghostty kitty nvim pi pnpm
+stow --no-folding shell bash fish ghostty
 ```
 
-The `scripts` package is optional and is only needed on machines where I want `~/.local/scripts`.
+Keep Bash as the login shell. Ghostty launches `~/.local/bin/interactive-shell`,
+which loads the shared terminal environment and then replaces itself with Fish
+(or starts Bash if Fish is missing, so a broken setup never closes the terminal).
+Bash sources the same environment. No Bash login wrapper or Fish environment
+parser is needed.
+
+## Tool installation and environment
+
+Install tools with the separate `ansible-playbooks` repository. Its Rust, pnpm
+and Go roles generate `~/.config/shell/env.d/*.sh` from their installation
+settings. Do not edit those generated files: change the corresponding Ansible
+role defaults and rerun the playbook. Rust uses `~/.local/share/cargo` and
+`~/.local/share/rustup`; Go uses its default GOPATH and discovers its GOROOT.
+
+The `shell` package provides `~/.config/shell/env.sh`, which loads those
+fragments and adds `~/.local/bin` without duplicating PATH entries. It also
+sets the preferred editor. This is a terminal environment, not a systemd or
+GNOME-wide environment. Desktop apps/services needing tool variables must be
+configured explicitly. No Java or personal FFmpeg configuration is enabled.
+
+For a terminal other than Ghostty/Kitty, configure its command as
+`~/.local/bin/interactive-shell`. Fish started from an initialized Bash/Fish
+inherits the environment. For an already-running terminal, start a fresh shell:
+
+```sh
+exec ~/.local/bin/interactive-shell
+```
+
+Fish's mutable `fish_variables` stays local. Prompt, theme, aliases and functions
+are tracked as normal Fish configuration. `bash/.bashrc` is Ubuntu's stock `/etc/skel/.bashrc` (colour prompt, `lesspipe`,
+completion, `~/.bash_aliases`) with the shared environment loader added on top.
+After a distro upgrade, refresh it from `/etc/skel/.bashrc` and keep the loader
+block. Back up and review existing startup files before replacing them.
+
+## Other optional Stow packages
+
+```sh
+stow --no-folding agents
+stow git kitty nvim uv
+# Review local conflicts before deploying these:
+stow pi pnpm
+```
+
+Use `stow --simulate --verbose ...` first. Do not blindly use `--adopt`: it
+moves existing local files into the repository and may overwrite your intended
+tracked settings. The old `env_vars` package was removed; if previously stowed,
+unstow it before upgrading (or remove its now-broken symlink). If an old
+`ghostty/config` link exists, remove it before deploying `config.ghostty`.
+
+The `scripts` package is optional. Neovim and Nerd Font installation are now
+provided by Ansible; the older scripts are retained only for reference.
 
 ## Shared agent skills
 
@@ -39,24 +88,39 @@ Codex's built-in skills can be recreated by Codex. Skills outside
 
 ## Pi coding agent
 
-The `pi` package stows the portable global configuration:
+Pi separates tracked preferences from mutable local settings:
 
-- `~/.pi/agent/settings.json`
-- `~/.pi/agent/APPEND_SYSTEM.md`
-- `~/.pi/agent/extensions/guardrails.json`
-- `~/.pi/agent/extensions/web-tools/` (`webfetch` and Exa-backed `websearch`)
+- `pi/settings.template.json` contains intentional preferences only.
+- `pi/.pi/agent/themes/` and `prompts/` are deployed through Stow.
+- `~/.pi/agent/settings.json` is a local file, **not a symlink**. Pi can update
+  bookkeeping such as `lastChangelogVersion` without dirtying this repository.
 
-After stowing `pi` on a new machine, install the vendored extension's runtime dependencies:
+Restore from the repository root:
 
 ```sh
-pnpm install --prod --dir ~/.pi/agent/extensions/web-tools
+stow --simulate --verbose --no-folding pi
+stow --no-folding pi
+bash pi/apply-settings.sh
 ```
 
-`websearch` uses Exa's official MCP free tier and does not require an API key.
-`settings.json` declares installed Pi packages, so Pi can restore them without
-committing generated package directories. Credentials (`auth.json`), trust
-decisions, sessions, logs, model caches, downloaded binaries, and generated
-`git/` and `npm/` package contents remain local and must not be committed.
+The script merges the template over local settings: objects merge recursively,
+template values win, and arrays are replaced. Unspecified local fields survive.
+It backs up changed settings to a timestamped `settings.json.<date>.bak`, leaves an already-applied file alone, preserves permissions,
+and refuses to replace a symlink. `PI_CODING_AGENT_DIR` overrides the settings
+location; Stow still targets the usual HOME paths. Close Pi before applying
+settings to avoid concurrent writes, then restart it or run `/reload`.
+
+When changing a preference through `/settings`, copy only the intended change
+into the template. Reapply deliberately, not on every launch. Do not copy Pi's
+bookkeeping into the template. Credentials (`auth.json`), trust decisions,
+sessions, logs, model caches, downloaded binaries, installation directories,
+and generated `git/`, `npm/`, and `node_modules/` contents remain local.
+
+The older `extensions/guardrails.json` and `extensions/web-tools/` sources are
+retained for review but excluded from Stow by `pi/.stow-local-ignore`.
+The old `pi-guardrails` and `plannotator` package declarations are not restored.
+Review compatibility before opting back in; the vendored web-tools extension
+would also need its runtime dependencies installed with `pnpm install --prod`.
 
 ## Intune automatic check-in (Ubuntu/GNOME, corporate machines)
 
