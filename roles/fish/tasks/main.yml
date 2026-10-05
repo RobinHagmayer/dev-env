@@ -1,0 +1,37 @@
+---
+- name: Check supported distribution for the Fish PPA
+  ansible.builtin.assert:
+    that: ansible_facts['distribution'] == 'Ubuntu'
+    fail_msg: The Fish PPA role supports Ubuntu only.
+
+- name: Install Fish through apt
+  become: true
+  tags: [packages]
+  block:
+    - name: Install system packages for the Fish repository
+      ansible.builtin.apt:
+        name: "{{ fish_apt_packages }}"
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Add the official Fish 4 PPA
+      ansible.builtin.deb822_repository:
+        name: fish-shell-release-4
+        types: [deb]
+        uris: "{{ fish_ppa_uri }}"
+        suites: ["{{ ansible_facts['distribution_release'] }}"]
+        components: [main]
+        signed_by: "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x{{ fish_ppa_key_fingerprint }}"
+        state: present
+        mode: "0644"
+      register: fish_repository
+
+    # Refresh immediately when adding the PPA, even if the old apt cache is
+    # recent. 'latest' also upgrades an existing distro-provided Fish package.
+    - name: Install the latest available Fish package # noqa package-latest -- Intentionally follow stable PPA updates.
+      ansible.builtin.apt:
+        name: fish
+        state: latest
+        update_cache: true
+        cache_valid_time: "{{ 0 if fish_repository is changed else 3600 }}"

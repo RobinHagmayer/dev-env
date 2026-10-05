@@ -74,6 +74,14 @@ Reruns do not upgrade existing tools. Use `pi update`, `claude update`, or Codex
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
+Install Fish shell from the [official Ubuntu Fish 4 PPA](https://launchpad.net/~fish-shell/+archive/ubuntu/release-4):
+
+```sh
+uv run ansible-playbook playbooks/fish.yml --ask-become-pass
+```
+
+This Ubuntu-only role adds the PPA with a repository-scoped signing key and installs the latest available `fish` package. Reruns apply available updates (apt's cache is refreshed at most hourly unless the repository changes). Unlike the user-home installs, all installation steps require sudo and are tagged `packages`. Your login shell and shell configuration are unchanged; run `fish` from your current terminal to try it.
+
 Install Meslo Nerd Font v3.4.0 (migrated from `~/.dotfiles/scripts/.local/scripts/install-nerd-font`):
 
 ```sh
