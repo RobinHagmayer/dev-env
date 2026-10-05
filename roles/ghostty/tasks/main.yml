@@ -8,44 +8,16 @@
   become: true
   tags: [packages]
 
+- name: Require an exact Ghostty release
+  ansible.builtin.assert:
+    that: ghostty_version is match('^[0-9]+\.[0-9]+\.[0-9]+$')
+    fail_msg: Pin a stable release and its checksum; floating tip builds are not supported.
+
 - name: Resolve pinned Ghostty release source
   ansible.builtin.set_fact:
     ghostty_source_url: "https://release.files.ghostty.org/{{ ghostty_version }}/ghostty-{{ ghostty_version }}.tar.gz"
     ghostty_source_checksum: "sha256:{{ ghostty_sha256 }}"
     ghostty_source_id: "{{ ghostty_version }}"
-  when: ghostty_version != 'tip'
-
-- name: Resolve the current Ghostty tip source
-  when: ghostty_version == 'tip'
-  block:
-    - name: Fetch Ghostty tip release metadata
-      ansible.builtin.uri:
-        url: https://api.github.com/repos/ghostty-org/ghostty/releases/tags/tip
-        return_content: true
-        headers:
-          Accept: application/vnd.github+json
-      register: ghostty_tip_release
-      changed_when: false
-      check_mode: false
-
-    - name: Find the prepared tip source archive
-      ansible.builtin.set_fact:
-        ghostty_tip_assets: >-
-          {{ ghostty_tip_release.json.assets
-             | selectattr('name', 'equalto', 'ghostty-source.tar.gz') | list }}
-
-    - name: Check that tip source is available with a SHA256 checksum
-      ansible.builtin.assert:
-        that:
-          - ghostty_tip_assets | length == 1
-          - ghostty_tip_assets[0].digest | default('', true) is match('^sha256:[0-9a-f]{64}$')
-        fail_msg: GitHub's tip release must contain ghostty-source.tar.gz with a SHA256 digest.
-
-    - name: Use the current tip archive and checksum
-      ansible.builtin.set_fact:
-        ghostty_source_url: "{{ ghostty_tip_assets[0].browser_download_url }}"
-        ghostty_source_checksum: "{{ ghostty_tip_assets[0].digest }}"
-        ghostty_source_id: "tip-{{ ghostty_tip_assets[0].digest.split(':')[1] }}"
 
 - name: Create directories
   ansible.builtin.file:

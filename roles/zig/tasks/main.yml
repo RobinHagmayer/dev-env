@@ -10,7 +10,9 @@
 
 - name: Check supported architecture
   ansible.builtin.assert:
-    that: ansible_facts['architecture'] == 'x86_64'
+    that:
+      - ansible_facts['architecture'] == 'x86_64'
+      - zig_version is match('^[0-9]+\.[0-9]+\.[0-9]+$')
     fail_msg: The pinned Zig checksum is for x86_64-linux only.
 
 - name: Create directories
@@ -29,6 +31,7 @@
     dest: "{{ zig_download_dir }}/zig-x86_64-linux-{{ zig_version }}.tar.xz"
     checksum: "sha256:{{ zig_sha256 }}"
     mode: "0644"
+  when: not ansible_check_mode
 
 - name: Unpack Zig
   ansible.builtin.unarchive:
@@ -37,9 +40,12 @@
     remote_src: true
     extra_opts: [--strip-components=1]
     creates: "{{ zig_install_dir }}/zig"
+  when: not ansible_check_mode
 
 - name: Link Zig into ~/.local/bin
   ansible.builtin.file:
     src: "{{ zig_install_dir }}/zig"
     dest: "{{ zig_bin_dir }}/zig"
     state: link
+    force: "{{ ansible_check_mode }}"
+  when: zig_link_binary

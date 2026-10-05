@@ -27,11 +27,39 @@
         mode: "0644"
       register: fish_repository
 
-    # Refresh immediately when adding the PPA, even if the old apt cache is
-    # recent. 'latest' also upgrades an existing distro-provided Fish package.
-    - name: Install the latest available Fish package # noqa package-latest -- Intentionally follow stable PPA updates.
-      ansible.builtin.apt:
+    # Only touch apt when the installed version differs from the pin, so a
+    # rerun is a no-op even if the PPA has since dropped the pinned build.
+    - name: Check the installed Fish version
+      ansible.builtin.command:
+        argv: [dpkg-query, --show, "--showformat=${Version}", fish]
+      register: fish_installed
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Determine whether Fish needs installation
+      ansible.builtin.set_fact:
+        fish_needs_install: "{{ fish_installed.rc != 0 or fish_installed.stdout | trim != fish_version }}"
+
+    # Fail if the pinned package is no longer available; never fall back to latest.
+    - name: Reconcile the installed Fish version
+      when: fish_needs_install
+      block:
+        - name: Release the Fish version hold
+          ansible.builtin.dpkg_selections:
+            name: fish
+            selection: install
+
+        - name: Install the pinned Fish package
+          ansible.builtin.apt:
+            name: "fish={{ fish_version }}"
+            state: present
+            allow_downgrade: true
+            update_cache: true
+            cache_valid_time: "{{ 0 if fish_repository is changed else 3600 }}"
+
+    # Keep apt upgrade and unattended upgrades from moving the pinned version.
+    - name: Hold Fish at the pinned version
+      ansible.builtin.dpkg_selections:
         name: fish
-        state: latest
-        update_cache: true
-        cache_valid_time: "{{ 0 if fish_repository is changed else 3600 }}"
+        selection: hold

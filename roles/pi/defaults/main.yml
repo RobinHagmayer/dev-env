@@ -1,8 +1,12 @@
 ---
+pi_version: "1.0.3"
+# SHA256 of the versioned managed-install manifests from pi.dev.
+pi_package_sha256: 9cae3572dc8090c7fd3ff7c7662ec7bba1b95529126e2054d6b42220be3b2fea
+pi_lock_sha256: d2a441d6f2f137a0a7fe2687cda0350e2028e49724776574db337674d2097fe7
 pi_apt_packages:
   - ca-certificates
   - curl
-  - util-linux # setsid prevents the installer from opening /dev/tty for prompts
 pi_bin_dir: "{{ ansible_facts['user_dir'] }}/.local/bin"
 pi_agent_dir: "{{ ansible_facts['user_dir'] }}/.pi/agent"
-pi_installer_dir: "{{ ansible_facts['user_dir'] }}/.cache/ansible-installers"
+pi_install_dir: "{{ pi_agent_dir }}/install"
+pi_release_dir: "{{ pi_install_dir }}/releases/{{ pi_version }}"

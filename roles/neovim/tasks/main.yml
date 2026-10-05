@@ -10,7 +10,9 @@
 
 - name: Check supported architecture
   ansible.builtin.assert:
-    that: ansible_facts['architecture'] == 'x86_64'
+    that:
+      - ansible_facts['architecture'] == 'x86_64'
+      - neovim_version is match('^v[0-9]+\.[0-9]+\.[0-9]+$')
     fail_msg: The DEB file name below is only checked for x86_64.
 
 - name: Check out Neovim source

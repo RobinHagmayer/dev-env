@@ -4,3 +4,4 @@ dependencies:
     vars:
       zig_version: "{{ ghostty_zig_version }}"
       zig_sha256: "{{ ghostty_zig_sha256 }}"
+      zig_link_binary: false

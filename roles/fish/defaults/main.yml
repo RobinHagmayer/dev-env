@@ -1,4 +1,8 @@
 ---
+# Full apt package version, including the Ubuntu codename suffix.
+# Override per host when using a different Ubuntu release. Inspect with apt-cache policy fish.
+fish_version: "4.9.3-1~resolute"
+
 fish_apt_packages:
   - ca-certificates
   - python3-debian

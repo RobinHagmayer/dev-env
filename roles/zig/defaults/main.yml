@@ -3,6 +3,8 @@ zig_apt_packages:
   - ca-certificates # HTTPS downloads
   - xz-utils # unpack the .tar.xz tarball
 zig_version: "0.15.2"
+# Dependencies such as Ghostty use the versioned executable directly.
+zig_link_binary: true
 # sha256 of zig-x86_64-linux-<version>.tar.xz, from https://ziglang.org/download/index.json
 zig_sha256: "02aa270f183da276e5b5920b1dac44a63f1a49e55050ebde3aecc9eb82f93239"
 zig_install_dir: "{{ ansible_facts['user_dir'] }}/.local/opt/zig-{{ zig_version }}"

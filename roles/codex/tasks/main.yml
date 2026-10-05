@@ -14,11 +14,26 @@
     state: directory
     mode: "0755"
 
-- name: Check for an installed Codex executable
-  ansible.builtin.stat:
-    path: "{{ codex_bin_dir }}/codex"
-    follow: true
-  register: codex_binary
+- name: Require an exact Codex release
+  ansible.builtin.assert:
+    that: codex_version is match('^[0-9]+\.[0-9]+\.[0-9]+$')
+
+- name: Disable scheduled updates of the standalone Codex package
+  ansible.builtin.file:
+    path: "{{ codex_home }}/packages/standalone/auto-update-version"
+    state: absent
+
+- name: Check installed Codex version
+  ansible.builtin.command:
+    argv: ["{{ codex_bin_dir }}/codex", --version]
+  register: codex_installed
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Determine whether Codex needs installation
+  ansible.builtin.set_fact:
+    codex_needs_install: "{{ codex_installed.rc != 0 or codex_installed.stdout | trim != 'codex-cli ' ~ codex_version }}"
 
 - name: Download the official Codex installer
   ansible.builtin.get_url:
@@ -27,20 +42,38 @@
     mode: "0644"
   when:
     - not ansible_check_mode
-    - not codex_binary.stat.exists
+    - codex_needs_install
+
+# Even with BIN_DIR on PATH, a detected conflict can trigger profile edits.
+# Keep those edits out of the real home while explicitly retaining CODEX_HOME.
+- name: Create an isolated home for Codex installer profile edits
+  ansible.builtin.file:
+    path: "{{ codex_installer_dir }}/home"
+    state: directory
+    mode: "0700"
+  when: codex_needs_install
 
 - name: Install Codex with its standalone installer
   ansible.builtin.command:
     argv:
       - sh
       - "{{ codex_installer_dir }}/codex-install.sh"
-    creates: "{{ codex_bin_dir }}/codex"
+  when:
+    - not ansible_check_mode
+    - codex_needs_install
+  changed_when: true
   environment:
     CODEX_INSTALL_DIR: "{{ codex_bin_dir }}"
+    CODEX_HOME: "{{ codex_home }}"
+    CODEX_RELEASE: "{{ codex_version }}"
     CODEX_NON_INTERACTIVE: "1"
+    HOME: "{{ codex_installer_dir }}/home"
+    PATH: "{{ codex_bin_dir }}:{{ ansible_facts['env']['PATH'] }}"
 
 - name: Verify Codex runs successfully
   ansible.builtin.command:
     argv: ["{{ codex_bin_dir }}/codex", --version]
+  register: codex_verified
   changed_when: false
+  failed_when: codex_verified.rc != 0 or codex_verified.stdout | trim != 'codex-cli ' ~ codex_version
   when: not ansible_check_mode

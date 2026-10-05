@@ -8,6 +8,13 @@
   become: true
   tags: [packages]
 
+- name: Require exact Rust and rustup releases on the supported architecture
+  ansible.builtin.assert:
+    that:
+      - rust_toolchain is match('^[0-9]+\.[0-9]+\.[0-9]+$')
+      - rust_rustup_version is match('^[0-9]+\.[0-9]+\.[0-9]+$')
+      - ansible_facts['architecture'] == 'x86_64'
+
 - name: Migrate legacy Rust directories to XDG locations
   ansible.builtin.include_tasks: migrate-home.yml
   loop:
@@ -31,30 +38,42 @@
         state: directory
         mode: "0700"
 
-    - name: Check for an installed rustup executable
-      ansible.builtin.stat:
-        path: "{{ rust_home }}/bin/rustup"
-      register: rust_binary
+    - name: Check installed rustup version
+      ansible.builtin.command:
+        argv: ["{{ rust_home }}/bin/rustup", --version]
+      register: rust_rustup_installed
+      changed_when: false
+      failed_when: false
+      check_mode: false
 
-    - name: Download rustup installer
+    - name: Determine whether rustup needs installation
+      ansible.builtin.set_fact:
+        rust_rustup_needs_install: >-
+          {{ rust_rustup_installed.rc != 0 or
+             not rust_rustup_installed.stdout.startswith('rustup ' ~ rust_rustup_version ~ ' ') }}
+
+    - name: Download the pinned rustup installer
       ansible.builtin.get_url:
-        url: https://sh.rustup.rs
-        dest: "{{ ansible_facts['user_dir'] }}/.cache/rustup-init.sh"
+        url: "https://static.rust-lang.org/rustup/archive/{{ rust_rustup_version }}/x86_64-unknown-linux-gnu/rustup-init"
+        dest: "{{ ansible_facts['user_dir'] }}/.cache/rustup-init-{{ rust_rustup_version }}"
+        checksum: "sha256:{{ rust_rustup_sha256 }}"
         mode: "0755"
       when:
         - not ansible_check_mode
-        - not rust_binary.stat.exists
+        - rust_rustup_needs_install
 
     - name: Install Rust without modifying shell startup files
       ansible.builtin.command:
         argv:
-          - sh
-          - "{{ ansible_facts['user_dir'] }}/.cache/rustup-init.sh"
+          - "{{ ansible_facts['user_dir'] }}/.cache/rustup-init-{{ rust_rustup_version }}"
           - -y
           - --no-modify-path
           - --default-toolchain
           - "{{ rust_toolchain }}"
-        creates: "{{ rust_home }}/bin/rustup"
+      when:
+        - not ansible_check_mode
+        - rust_rustup_needs_install
+      changed_when: true
 
     - name: List installed Rust toolchains
       ansible.builtin.command: "{{ rust_home }}/bin/rustup toolchain list"
@@ -65,7 +84,7 @@
 
     - name: Ensure the requested Rust toolchain is installed
       ansible.builtin.command:
-        argv: ["{{ rust_home }}/bin/rustup", toolchain, install, "{{ rust_toolchain }}", --profile, default]
+        argv: ["{{ rust_home }}/bin/rustup", toolchain, install, "{{ rust_toolchain }}", --profile, default, --no-self-update]
       when: >-
         rust_toolchains.stdout_lines | select('match',
           '^' ~ (rust_toolchain | regex_escape) ~ '(-|\\s|$)') | list | length == 0
