@@ -36,7 +36,12 @@ vim.pack.add({
   { src = "https://github.com/stevearc/conform.nvim", version = "master" },
   { src = "https://github.com/rebelot/kanagawa.nvim", version = "master" },
 }, { confirm = false })
-require("kanagawa").setup({})
+require("kanagawa").setup({
+  colors = { theme = { all = { ui = { bg_gutter = "none" } } } },
+  overrides = function(colors)
+    return { EndOfBuffer = { fg = colors.theme.ui.nontext } }
+  end,
+})
 vim.cmd.colorscheme("kanagawa-wave")
 require("mini.icons").setup()
 require("mini.pick").setup()

@@ -23,6 +23,7 @@ end
 require("editor.guide").setup()
 -- Ordinary feature modules; no custom plugin manager or dependency framework.
 for _, feature in ipairs({
+  "scroll-eof",
   "completion",
   "navigation",
   "treesitter",
