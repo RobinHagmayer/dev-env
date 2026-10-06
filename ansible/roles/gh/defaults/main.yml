@@ -1,0 +1,8 @@
+---
+# Exact apt package version. Change deliberately, then rerun playbooks/gh.yml.
+gh_version: "2.102.0"
+
+# Official GitHub CLI repository and checksum published in its install docs.
+gh_repository_uri: https://cli.github.com/packages
+gh_keyring_url: https://cli.github.com/packages/githubcli-archive-keyring.gpg
+gh_keyring_sha256: 6084d5d7bd8e288441e0e94fc6275570895da18e6751f70f057485dc2d1a811b

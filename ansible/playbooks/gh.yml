@@ -1,0 +1,6 @@
+---
+- name: Install pinned GitHub CLI from its official repository
+  hosts: workstations
+  roles:
+    - role: gh
+      tags: [gh]

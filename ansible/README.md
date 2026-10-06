@@ -75,6 +75,14 @@ Update these tools by changing their role defaults and rerunning this playbook, 
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
+Install pinned GitHub CLI from its [official Debian/Ubuntu repository](https://github.com/cli/cli/blob/trunk/docs/install_linux.md#debian):
+
+```sh
+uv run ansible-playbook playbooks/gh.yml --ask-become-pass
+```
+
+The `gh` role installs the exact `gh_version` in `roles/gh/defaults/main.yml` (currently `2.102.0`) and puts the package on apt hold, preventing `apt upgrade` and unattended upgrades from changing it. To update or downgrade, deliberately change that pin and rerun the playbook. If the installed package already matches, the role skips the package installation even if the repository has dropped that version. An unavailable new pin fails instead of falling back to latest. The repository signing key is SHA256-verified and scoped to this repository; update its checksum deliberately if GitHub rotates the key. All installation tasks require sudo and are tagged `packages`. Authentication (`gh auth login`) is a separate manual step; no credentials are managed.
+
 Install Fish shell from the [official Ubuntu Fish 4 PPA](https://launchpad.net/~fish-shell/+archive/ubuntu/release-4):
 
 ```sh
