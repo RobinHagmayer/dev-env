@@ -77,5 +77,6 @@ guide.add({
     vim.cmd("EditorHealth")
   end,
 })
+vim.keymap.set("i", "jk", "<Esc>", { desc = "Exit insert mode" })
 vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<cr>", { desc = "Clear search highlighting" })
 vim.keymap.set("n", "<leader>qq", "<cmd>copen<cr>", { desc = "Open quickfix list" })

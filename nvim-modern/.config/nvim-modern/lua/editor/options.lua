@@ -5,6 +5,7 @@ vim.opt.signcolumn = "yes"
 vim.opt.cursorline = true
 vim.opt.winborder = "rounded"
 vim.opt.mouse = "a"
+vim.opt.clipboard = "unnamedplus" -- Use the system clipboard for yank/paste.
 vim.opt.ignorecase = true
 vim.opt.smartcase = true
 vim.opt.splitright = true
