@@ -1,11 +1,12 @@
 ---
-- name: Install system packages for Codex
-  ansible.builtin.apt:
-    name: "{{ codex_apt_packages }}"
-    state: present
-    update_cache: true
-    cache_valid_time: 3600
-  become: true
+- name: Install or validate system packages for codex
+  ansible.builtin.include_role:
+    name: system_packages
+    apply:
+      tags: [packages]
+  vars:
+    system_packages_names: "{{ codex_apt_packages }}"
+    system_packages_bootstrap_playbook: ai-tools.yml
   tags: [packages]
 
 - name: Create Codex installer cache directory

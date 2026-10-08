@@ -1,0 +1,22 @@
+---
+# Routine user-level reconciliation: validate prerequisites, never manage apt.
+# Reuse provisioning playbooks so role lists and tool tags have one owner.
+- name: Reconcile developer tools without sudo
+  ansible.builtin.import_playbook: dev-tools.yml
+  vars:
+    manage_system_packages: false
+
+- name: Reconcile AI tools without sudo
+  ansible.builtin.import_playbook: ai-tools.yml
+  vars:
+    manage_system_packages: false
+
+- name: Reconcile Ghostty without sudo
+  ansible.builtin.import_playbook: ghostty.yml
+  vars:
+    manage_system_packages: false
+
+- name: Reconcile Nerd Fonts without sudo
+  ansible.builtin.import_playbook: nerd-fonts.yml
+  vars:
+    manage_system_packages: false

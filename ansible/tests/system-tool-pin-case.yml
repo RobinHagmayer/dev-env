@@ -1,0 +1,23 @@
+---
+- name: Reset the expected rejection
+  ansible.builtin.set_fact:
+    system_tool_rejected: false
+
+- name: Run the system-tool role with a mismatched pin
+  block:
+    - name: Validate the selected system tool
+      ansible.builtin.include_role:
+        name: "{{ system_tool_case.role }}"
+  rescue:
+    - name: Verify the pin error and bootstrap command
+      ansible.builtin.assert:
+        that:
+          - system_tool_case.error in ansible_failed_result.msg
+          - "'playbooks/' ~ system_tool_case.bootstrap ~ ' --ask-become-pass' in ansible_failed_result.msg"
+    - name: Record the expected rejection
+      ansible.builtin.set_fact:
+        system_tool_rejected: true
+
+- name: Require rejection before any installation
+  ansible.builtin.assert:
+    that: system_tool_rejected

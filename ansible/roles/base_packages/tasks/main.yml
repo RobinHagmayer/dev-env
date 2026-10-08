@@ -1,7 +1,10 @@
 ---
-- name: Install base packages
-  ansible.builtin.apt:
-    name: "{{ base_packages_names }}"
-    state: present
-    update_cache: true
-    cache_valid_time: 3600
+- name: Install or validate base packages
+  ansible.builtin.include_role:
+    name: system_packages
+    apply:
+      tags: [packages]
+  vars:
+    system_packages_names: "{{ base_packages_names }}"
+    system_packages_bootstrap_playbook: dev-tools.yml
+  tags: [packages]

@@ -7,17 +7,58 @@
       - gh_version is match('^[0-9]+\.[0-9]+\.[0-9]+$')
     fail_msg: This role requires Debian or Ubuntu and an exact gh package version (e.g. 2.102.0).
 
+- name: Install or validate system packages for GitHub CLI
+  ansible.builtin.include_role:
+    name: system_packages
+    apply:
+      tags: [packages]
+  vars:
+    system_packages_names: [ca-certificates, python3-debian]
+    system_packages_bootstrap_playbook: gh.yml
+  tags: [packages]
+
+- name: Validate the pinned GitHub CLI without sudo
+  when: not (manage_system_packages | default(true))
+  tags: [packages]
+  block:
+    - name: Read the installed GitHub CLI package
+      ansible.builtin.command:
+        argv: [dpkg-query, --show, "--showformat=${db:Status-Status} ${Version}", gh]
+        expand_argument_vars: false
+      register: gh_readonly_package
+      changed_when: false
+      failed_when: gh_readonly_package.rc not in [0, 1]
+      check_mode: false
+
+    - name: Require the pinned GitHub CLI package
+      ansible.builtin.assert:
+        that:
+          - gh_readonly_package.rc == 0
+          - gh_readonly_package.stdout | trim == 'installed ' ~ gh_version
+        fail_msg: >-
+          GitHub CLI must already be installed at {{ gh_version }} in sudo-free mode.
+          Run: uv run ansible-playbook playbooks/gh.yml --ask-become-pass
+        quiet: true
+
+    - name: Read the GitHub CLI package hold
+      ansible.builtin.command:
+        argv: [dpkg, --get-selections, gh]
+      register: gh_readonly_hold
+      changed_when: false
+      check_mode: false
+
+    - name: Require the GitHub CLI version hold
+      ansible.builtin.assert:
+        that: gh_readonly_hold.stdout.split() | last == 'hold'
+        fail_msg: >-
+          GitHub CLI must be held at its pin. Run: uv run ansible-playbook playbooks/gh.yml --ask-become-pass
+        quiet: true
+
 - name: Install GitHub CLI through apt
+  when: manage_system_packages | default(true)
   become: true
   tags: [packages]
   block:
-    - name: Install system packages for the GitHub CLI repository
-      ansible.builtin.apt:
-        name: [ca-certificates, python3-debian]
-        state: present
-        update_cache: true
-        cache_valid_time: 3600
-
     - name: Create the apt keyring directory
       ansible.builtin.file:
         path: /etc/apt/keyrings

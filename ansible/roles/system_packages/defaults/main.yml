@@ -1,0 +1,3 @@
+---
+# Cross-role policy: provision unless the workflow explicitly opts out.
+system_packages_manage: "{{ manage_system_packages | default(true) }}"

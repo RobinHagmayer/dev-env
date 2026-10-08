@@ -1,11 +1,12 @@
 ---
-- name: Install system packages for Neovim
-  ansible.builtin.apt:
-    name: "{{ neovim_apt_packages }}"
-    state: present
-    update_cache: true
-    cache_valid_time: 3600
-  become: true
+- name: Install or validate system packages for neovim
+  ansible.builtin.include_role:
+    name: system_packages
+    apply:
+      tags: [packages]
+  vars:
+    system_packages_names: "{{ neovim_apt_packages }}"
+    system_packages_bootstrap_playbook: neovim.yml
   tags: [packages]
 
 - name: Check supported architecture
@@ -14,12 +15,6 @@
       - ansible_facts['architecture'] == 'x86_64'
       - neovim_version is match('^v[0-9]+\.[0-9]+\.[0-9]+$')
     fail_msg: The DEB file name below is only checked for x86_64.
-
-- name: Check out Neovim source
-  ansible.builtin.git:
-    repo: "{{ neovim_repo }}"
-    dest: "{{ neovim_src_dir }}"
-    version: "{{ neovim_version }}"
 
 - name: Check installed Neovim package version
   ansible.builtin.command:
@@ -33,11 +28,29 @@
   failed_when: neovim_installed.rc not in [0, 1]
   check_mode: false
 
+- name: Require the pinned system Neovim in sudo-free mode
+  when: not (manage_system_packages | default(true))
+  ansible.builtin.assert:
+    that:
+      - neovim_installed.rc == 0
+      - neovim_installed.stdout_lines | first == 'install ok installed'
+      - (neovim_installed.stdout_lines | last).split('-')[0] == neovim_version | regex_replace('^v', '')
+    fail_msg: >-
+      The system Neovim DEB requires sudo to update. Run: uv run ansible-playbook playbooks/neovim.yml --ask-become-pass
+    quiet: true
+
+- name: Check out Neovim source
+  ansible.builtin.git:
+    repo: "{{ neovim_repo }}"
+    dest: "{{ neovim_src_dir }}"
+    version: "{{ neovim_version }}"
+
 # Building a DEB (instead of `make install`) lets dpkg remove all files again.
 # BUILD.md calls this an unsupported, best-effort feature of the build.
 - name: Build Neovim and package it as DEB
   # A dry run cannot build the DEB needed by the installation task.
   when:
+    - manage_system_packages | default(true)
     - not ansible_check_mode
     - >-
       neovim_installed.rc != 0 or

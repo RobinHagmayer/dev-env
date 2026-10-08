@@ -1,0 +1,25 @@
+---
+- name: Verify system-tool pin mismatches fail before sudo or builds
+  hosts: workstations
+  vars:
+    manage_system_packages: false
+    ansible_become_exe: /bin/false
+    gh_version: "0.0.0"
+    fish_version: "0.0.0"
+    neovim_version: v0.0.0
+  tasks:
+    - name: Check each system-only tool
+      ansible.builtin.include_tasks: system-tool-pin-case.yml
+      loop:
+        - role: gh
+          error: GitHub CLI must already be installed at 0.0.0
+          bootstrap: gh.yml
+        - role: fish
+          error: Fish must already be installed at 0.0.0
+          bootstrap: fish.yml
+        - role: neovim
+          error: The system Neovim DEB requires sudo to update
+          bootstrap: neovim.yml
+      loop_control:
+        loop_var: system_tool_case
+        label: "{{ system_tool_case.role }}"

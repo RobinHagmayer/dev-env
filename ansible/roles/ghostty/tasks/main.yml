@@ -1,11 +1,12 @@
 ---
-- name: Install system packages for Ghostty
-  ansible.builtin.apt:
-    name: "{{ ghostty_apt_packages }}"
-    state: present
-    update_cache: true
-    cache_valid_time: 3600
-  become: true
+- name: Install or validate system packages for ghostty
+  ansible.builtin.include_role:
+    name: system_packages
+    apply:
+      tags: [packages]
+  vars:
+    system_packages_names: "{{ ghostty_apt_packages }}"
+    system_packages_bootstrap_playbook: ghostty.yml
   tags: [packages]
 
 - name: Require an exact Ghostty release

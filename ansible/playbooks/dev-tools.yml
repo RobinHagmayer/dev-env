@@ -1,12 +1,11 @@
 ---
 # Roles that install system packages use `become` on those tasks only (tagged
 # `packages`), everything else installs into the user's home without sudo.
-# Each role lists all of its own requirements; none relies on another role.
+# Roles declare their own prerequisites or pull in a dependency role.
 - name: Install base packages and developer tools
   hosts: workstations
   roles:
     - role: base_packages
-      become: true
       tags: [base, packages]
     - role: rust
       tags: [rust]
