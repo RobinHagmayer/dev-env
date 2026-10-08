@@ -6,11 +6,12 @@
 
 # Provides the German locale used for dates, currency and units. The user
 # session selects it through the Stow `locale` package, not system-wide.
-- name: Install the language pack
-  become: true
+- name: Install or validate the language pack
+  ansible.builtin.include_role:
+    name: system_packages
+    apply:
+      tags: [packages]
+  vars:
+    system_packages_names: ["{{ locale_language_pack }}"]
+    system_packages_bootstrap_playbook: locale.yml
   tags: [packages]
-  ansible.builtin.apt:
-    name: "{{ locale_language_pack }}"
-    state: present
-    update_cache: true
-    cache_valid_time: 3600

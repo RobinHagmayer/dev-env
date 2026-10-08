@@ -1,0 +1,68 @@
+---
+# Exercises the real dpkg-query boundary without installing/removing packages.
+# Run in normal mode and with --check from the ansible directory.
+- name: Verify sudo-free prerequisite validation
+  hosts: workstations
+  gather_facts: false
+  vars:
+    manage_system_packages: false
+    # Any accidental privilege escalation must fail, not prompt or mutate apt.
+    ansible_become_exe: /bin/false
+  tasks:
+    - name: Accept an installed prerequisite
+      ansible.builtin.include_role:
+        name: system_packages
+      vars:
+        system_packages_names: [dpkg]
+        system_packages_bootstrap_playbook: dev-tools.yml
+
+    - name: Reject a missing prerequisite
+      block:
+        - name: Validate an unavailable package
+          ansible.builtin.include_role:
+            name: system_packages
+          vars:
+            system_packages_names: [dotfiles-prerequisite-that-does-not-exist]
+            system_packages_bootstrap_playbook: ai-tools.yml
+      rescue:
+        - name: Verify the actionable missing-package error
+          ansible.builtin.assert:
+            that:
+              - "'Missing system packages: dotfiles-prerequisite-that-does-not-exist.' in ansible_failed_result.msg"
+              - "'uv run ansible-playbook playbooks/ai-tools.yml --ask-become-pass' in ansible_failed_result.msg"
+        - name: Record the expected rejection
+          ansible.builtin.set_fact:
+            missing_package_rejected: true
+
+    - name: Require the missing prerequisite to have failed
+      ansible.builtin.assert:
+        that: missing_package_rejected | default(false)
+
+    - name: Reject an ambiguous command-line policy
+      vars:
+        manage_system_packages: "false"
+      block:
+        - name: Validate a string instead of a boolean
+          ansible.builtin.include_role:
+            name: system_packages
+          vars:
+            system_packages_names: [dpkg]
+            system_packages_bootstrap_playbook: dev-tools.yml
+      rescue:
+        - name: Verify the policy error
+          ansible.builtin.assert:
+            that: "'manage_system_packages must be a boolean' in ansible_failed_result.msg"
+        - name: Record the expected policy rejection
+          ansible.builtin.set_fact:
+            invalid_policy_rejected: true
+
+    - name: Require the ambiguous policy to have failed
+      ansible.builtin.assert:
+        that: invalid_policy_rejected | default(false)
+
+    - name: Accept a subsequent caller without leaking the previous inputs
+      ansible.builtin.include_role:
+        name: system_packages
+      vars:
+        system_packages_names: [dpkg]
+        system_packages_bootstrap_playbook: dev-tools.yml

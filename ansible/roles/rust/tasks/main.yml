@@ -1,11 +1,12 @@
 ---
-- name: Install system packages for Rust
-  ansible.builtin.apt:
-    name: "{{ rust_apt_packages }}"
-    state: present
-    update_cache: true
-    cache_valid_time: 3600
-  become: true
+- name: Install or validate system packages for rust
+  ansible.builtin.include_role:
+    name: system_packages
+    apply:
+      tags: [packages]
+  vars:
+    system_packages_names: "{{ rust_apt_packages }}"
+    system_packages_bootstrap_playbook: dev-tools.yml
   tags: [packages]
 
 - name: Require exact Rust and rustup releases on the supported architecture

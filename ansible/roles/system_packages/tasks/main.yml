@@ -1,0 +1,46 @@
+---
+- name: Validate the system-package policy
+  ansible.builtin.assert:
+    that:
+      - system_packages_manage is boolean
+    fail_msg: 'manage_system_packages must be a boolean; use -e ''{"manage_system_packages": false}'' on the command line.'
+
+- name: Install required system packages
+  ansible.builtin.apt:
+    name: "{{ system_packages_names }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  become: true
+  when: system_packages_manage
+
+# dpkg-query works with uv's Python too; package_facts would require distro
+# Python bindings. This probe needs neither root nor an apt-cache refresh.
+- name: Validate prerequisites without managing system packages
+  when: not system_packages_manage
+  become: false
+  block:
+    - name: Read installed Debian packages
+      ansible.builtin.command:
+        argv:
+          - dpkg-query
+          - --show
+          - "--showformat=${Package} ${db:Status-Status}\n"
+        expand_argument_vars: false
+      register: system_packages_query
+      changed_when: false
+      check_mode: false
+
+    - name: Require installed prerequisites
+      vars:
+        system_packages_installed: >-
+          {{ system_packages_query.stdout_lines
+             | select('search', ' installed$')
+             | map('split') | map('first') | list }}
+        system_packages_missing: "{{ system_packages_names | difference(system_packages_installed) | sort }}"
+      ansible.builtin.assert:
+        that: system_packages_missing | length == 0
+        fail_msg: >-
+          Missing system packages: {{ system_packages_missing | join(', ') }}.
+          Bootstrap them with: uv run ansible-playbook playbooks/{{ system_packages_bootstrap_playbook }} --ask-become-pass
+        quiet: true
