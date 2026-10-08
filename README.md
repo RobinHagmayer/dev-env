@@ -108,6 +108,21 @@ to the fuller option. That setting lives in the browser profile and is not
 tracked here. Whether Edge reads the `LC_*` variables is untested; the
 fallback is launching it with `--lang=en-DE`.
 
+## T3 Code data directory
+
+T3 Code does not follow XDG and writes everything to `~/.t3`. The `t3code`
+package sets `T3CODE_HOME=~/.local/share/t3` through `~/.config/environment.d/`,
+so the desktop app, the `t3` CLI in GNOME terminals, and `t3 service install`
+(which records the value in its unit) all use it. SSH and TTY logins do not read
+`environment.d`; add the export to `shell/env.sh` if `t3` is needed there.
+
+Stow it, then log out and back in **before** first launching T3 Code, or it
+recreates `~/.t3`:
+
+```sh
+stow --no-folding t3code
+```
+
 ## Shared agent skills
 
 The `agents` package tracks `~/.agents/skills` and `~/.agents/skill-sources.toml`.
