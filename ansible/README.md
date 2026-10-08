@@ -48,6 +48,53 @@ Run Ansible commands through `uv run`, e.g. `uv run ansible-playbook playbook.ym
 
 ## Usage
 
+### Provisioning versus routine updates
+
+The existing playbooks are **provisioning entry points**: they install their
+own system prerequisites and may need `--ask-become-pass`, even when a tool is
+already installed. Their default policy remains `manage_system_packages: true`.
+
+For routine user-level updates, change the relevant version pin/checksums,
+then use the **sudo-free entry point**:
+
+```sh
+uv run ansible-playbook playbooks/user-tools.yml --tags pi
+uv run ansible-playbook playbooks/user-tools.yml --tags claude,codex
+uv run ansible-playbook playbooks/user-tools.yml --tags go,zig,ghostty
+uv run ansible-playbook playbooks/user-tools.yml --tags gh_stack
+uv run ansible-playbook playbooks/user-tools.yml --check --diff
+```
+
+Without tags it reconciles developer tools, AI tools, Ghostty and Nerd Fonts.
+It reuses the provisioning playbooks with `manage_system_packages: false`,
+including dependency roles. It checks installed prerequisites with
+unprivileged `dpkg-query`; it does **not** install/remove system packages,
+refresh apt metadata, edit repositories or change package holds. Missing
+prerequisites fail with the provisioning command to run, rather than falling
+back to sudo. As with any playbook, earlier successful tasks are not rolled
+back if a later role fails.
+
+`gh stack` remains a user-level extension, but its system-installed `gh`
+dependency must already match `gh_version` and be held. Update that pin with
+`playbooks/gh.yml --ask-become-pass` before updating the extension. Fish and
+the system Neovim DEB are not part of `user-tools.yml`; their updates still
+require their provisioning playbooks and sudo. The user-tools workflow is
+not a dry run: it reconciles pins, including **downgrades**. Check the diff
+first if you have manually updated a tool.
+
+The same policy can be used with an individual provisioning playbook:
+
+```sh
+uv run ansible-playbook playbooks/ai-tools.yml --tags pi -e '{"manage_system_packages": false}'
+```
+
+Use JSON extra-vars so `false` is a boolean, not a string. The `packages` tag
+still supports `--skip-tags packages` as an explicit escape hatch, but that
+also skips prerequisite validation. Routine updates should use
+`user-tools.yml` instead. Do not add `--become` to user-level commands.
+
+### Tool provisioning
+
 Install the base packages and developer tools (Rust, Go, Zig, pnpm + Node.js + npm) on this machine:
 
 ```sh
@@ -69,7 +116,7 @@ uv run ansible-playbook playbooks/ai-tools.yml --tags claude,codex --ask-become-
 
 These roles install as your normal user and reconcile the versions selected by their defaults, including downgrades. Pi uses the official versioned managed-install manifests, checks their SHA256 digests, and installs locked dependencies with `npm ci --ignore-scripts`; its sessions and credentials are preserved. Pi pulls in pnpm for Node.js and a separately pinned npm package (pnpm's runtime installer does not bundle npm). Claude Code downloads a checksum-pinned native binary directly (its shell installer always downloads a latest bootstrap binary). The role merges `env.DISABLE_AUTOUPDATER: "1"` into existing Claude settings without replacing unrelated preferences, backing up changed settings. Codex uses its official non-interactive installer with an exact release argument, isolates installer HOME to prevent profile edits, and removes the standalone package's automatic-update marker. Check mode does not download or install tools.
 
-Update these tools by changing their role defaults and rerunning this playbook, not with their self-update commands. Manual self-updates remain possible but the next playbook run restores the repository's pin. Authentication is a separate manual step; no credentials are managed by these roles. Other installation locations/package managers are not automatically migrated. Make sure `~/.local/bin` is on your shell PATH, e.g. for the current terminal:
+Update these tools by changing their role defaults and rerunning `user-tools.yml` with the relevant tags, not with their self-update commands. Manual self-updates remain possible but the next playbook run restores the repository's pin. Authentication is a separate manual step; no credentials are managed by these roles. Other installation locations/package managers are not automatically migrated. Make sure `~/.local/bin` is on your shell PATH, e.g. for the current terminal:
 
 ```sh
 export PATH="$HOME/.local/bin:$PATH"
@@ -115,16 +162,19 @@ Build Neovim from source and install it as a DEB package (so `dpkg`/`apt remove 
 uv run ansible-playbook playbooks/neovim.yml --ask-become-pass
 ```
 
-Every role installs the system packages it needs itself (tasks tagged `packages`, run with sudo), so each role works on its own. Run a subset with tags, and skip the sudo tasks when the packages are already there:
+Every role declares the system packages it needs (tasks tagged `packages`).
+Provisioning installs them with sudo; sudo-free reconciliation validates them.
+Keep roles self-contained rather than duplicating prerequisites in a separate
+bootstrap list:
 
 ```sh
 uv run ansible-playbook playbooks/dev-tools.yml --tags go,zig --ask-become-pass
-uv run ansible-playbook playbooks/dev-tools.yml --skip-tags packages
+uv run ansible-playbook playbooks/user-tools.yml --tags go,zig
 ```
 
 The `gh_stack` role installs the `gh stack` extension (github/gh-stack, stacked pull requests) pinned to `gh_stack_version`, with the `gh` role as a dependency. Both are installed by `playbooks/gh.yml`, or by `uv run ansible-playbook playbooks/dev-tools.yml --tags gh_stack --ask-become-pass`. Only the CLI's system-package tasks use sudo; the extension installs as your normal user. Extension downloads require GitHub CLI authentication (`gh auth login`, or a token supplied externally); credentials are not managed here. Reruns check the extension's repository, release tag, pin state and executable, so an already-correct installation needs no download or change. Different versions and unpinned installations are replaced after checking that the requested release exists; a later download failure can still leave the extension absent. Check mode does not install or remove extensions. The extension directory follows `XDG_DATA_HOME` (otherwise `~/.local/share`).
 
-Rust, pnpm and Go also generate POSIX environment fragments in `~/.config/shell/env.d`. The `shell` Stow package of this repository (`~/.dotfiles/shell`) loads them for Bash and its interactive Fish launcher; installation paths and generated exports come from the same role defaults. These files configure terminal environments, not GNOME or systemd services. Rust data lives in `~/.local/share/cargo` (`rust_home`) and `~/.local/share/rustup` (`rust_toolchain_home`). Existing `~/.cargo` and `~/.rustup` directories are moved there, with compatibility symlinks retained for old terminals; the role refuses to merge two existing installations. Rust uses `--no-modify-path`, and pnpm's installer runs with an isolated HOME so neither adds configuration to your real startup files. Rerun `dev-tools.yml --tags rust,pnpm,go` after changing their settings. Removing a tool does not automatically remove its environment fragment.
+Rust, pnpm and Go also generate POSIX environment fragments in `~/.config/shell/env.d`. The `shell` Stow package of this repository (`~/.dotfiles/shell`) loads them for Bash and its interactive Fish launcher; installation paths and generated exports come from the same role defaults. These files configure terminal environments, not GNOME or systemd services. Rust data lives in `~/.local/share/cargo` (`rust_home`) and `~/.local/share/rustup` (`rust_toolchain_home`). Existing `~/.cargo` and `~/.rustup` directories are moved there, with compatibility symlinks retained for old terminals; the role refuses to merge two existing installations. Rust uses `--no-modify-path`, and pnpm's installer runs with an isolated HOME so neither adds configuration to your real startup files. Rerun `user-tools.yml --tags rust,pnpm,go` after changing their settings. Removing a tool does not automatically remove its environment fragment.
 
 ## Version policy
 
@@ -134,4 +184,25 @@ Neovim reconciles its DEB version, including downgrades. Ghostty reconciles its 
 
 OS prerequisite packages deliberately use apt `state: present`, not exact package pins. Ubuntu security/system upgrades are managed separately; refreshing apt metadata is not a tool version upgrade. Version pinning is not a frozen OS image: dependency packages, upstream installer scripts and release availability can still change.
 
-Lint: `uv run ansible-lint`
+## Verification
+
+```sh
+uv run ansible-lint
+uv run ansible-playbook tests/system-packages.yml
+uv run ansible-playbook tests/system-packages.yml --check
+uv run ansible-playbook tests/system-tool-pins.yml
+uv run ansible-playbook tests/system-tool-pins.yml --check
+uv run ansible-playbook playbooks/user-tools.yml --check -e '{"ansible_become_exe": "/bin/false"}'
+```
+
+The tests exercise real Debian package inspection, expected prerequisite/pin
+failures and actionable bootstrap errors. They disable privilege escalation;
+expected failures are rescued and asserted, with a successful final recap.
+The system-tool tests require the role prerequisites to be installed on Ubuntu.
+
+To verify provisioning manually, run the relevant original playbook with
+`--check --diff --ask-become-pass`, then without `--check` if the proposed
+changes are wanted. Verify first-time bootstrap on a disposable fresh machine;
+a workstation with prerequisites installed cannot prove fresh provisioning.
+Check mode intentionally skips some downloads/builds and is not a complete
+simulation of tool updates.
