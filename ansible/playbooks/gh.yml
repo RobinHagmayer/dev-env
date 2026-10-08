@@ -1,6 +1,7 @@
 ---
-- name: Install pinned GitHub CLI from its official repository
+- name: Install pinned GitHub CLI and gh stack extension
   hosts: workstations
   roles:
-    - role: gh
-      tags: [gh]
+    # gh_stack pulls in the pinned gh role before installing the extension.
+    - role: gh_stack
+      tags: [gh, gh_stack]
