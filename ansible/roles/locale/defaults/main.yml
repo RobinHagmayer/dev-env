@@ -1,0 +1,3 @@
+---
+# Language pack that provides the regional-format locale (it generates de_DE.UTF-8).
+locale_language_pack: language-pack-de

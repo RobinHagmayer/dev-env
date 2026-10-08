@@ -1,0 +1,82 @@
+---
+- name: Check supported operating system and explicit GitHub CLI version
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['distribution'] in ['Debian', 'Ubuntu']
+      - gh_version is string
+      - gh_version is match('^[0-9]+\.[0-9]+\.[0-9]+$')
+    fail_msg: This role requires Debian or Ubuntu and an exact gh package version (e.g. 2.102.0).
+
+- name: Install GitHub CLI through apt
+  become: true
+  tags: [packages]
+  block:
+    - name: Install system packages for the GitHub CLI repository
+      ansible.builtin.apt:
+        name: [ca-certificates, python3-debian]
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Create the apt keyring directory
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Install the verified GitHub CLI repository signing key
+      ansible.builtin.get_url:
+        url: "{{ gh_keyring_url }}"
+        dest: /etc/apt/keyrings/githubcli-archive-keyring.gpg
+        checksum: "sha256:{{ gh_keyring_sha256 }}"
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Read the Debian package architecture
+      ansible.builtin.command:
+        argv: [dpkg, --print-architecture]
+      register: gh_architecture
+      changed_when: false
+      check_mode: false
+
+    - name: Add the official GitHub CLI repository
+      ansible.builtin.deb822_repository:
+        name: github-cli
+        types: [deb]
+        uris: "{{ gh_repository_uri }}"
+        suites: [stable]
+        components: [main]
+        architectures: ["{{ gh_architecture.stdout | trim }}"]
+        signed_by: /etc/apt/keyrings/githubcli-archive-keyring.gpg
+        state: present
+        mode: "0644"
+
+    # Include status so a removed package with residual config is not treated as installed.
+    - name: Check the installed GitHub CLI package
+      ansible.builtin.command:
+        argv: [dpkg-query, --show, "--showformat=${db:Status-Status} ${Version}", gh]
+      register: gh_installed
+      changed_when: false
+      failed_when: gh_installed.rc not in [0, 1]
+      check_mode: false
+
+    # Do not ask apt to resolve an already-installed pin: upstream may drop old builds.
+    - name: Install the exact GitHub CLI version when it differs
+      ansible.builtin.apt:
+        name: "gh={{ gh_version }}"
+        state: present
+        allow_downgrade: true
+        allow_change_held_packages: true
+        update_cache: true
+      when: gh_installed.rc != 0 or gh_installed.stdout | trim != 'installed ' ~ gh_version
+
+    # Explicit apt installs may change a held package without first releasing the hold.
+    # On a fresh check-mode run there is no real package for dpkg to hold yet.
+    - name: Hold GitHub CLI at the pinned version
+      ansible.builtin.dpkg_selections:
+        name: gh
+        selection: hold
+      when: not ansible_check_mode or gh_installed.stdout is match('^installed ')

@@ -16,3 +16,5 @@
       tags: [zig]
     - role: pnpm
       tags: [pnpm]
+    - role: gh_stack
+      tags: [gh_stack]

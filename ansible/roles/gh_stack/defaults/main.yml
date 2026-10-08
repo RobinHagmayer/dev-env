@@ -1,0 +1,6 @@
+---
+# Exact binary release tag. Change deliberately, then rerun playbooks/gh.yml.
+gh_stack_version: v0.2.0
+
+# GitHub CLI stores extensions below XDG_DATA_HOME, independently of GH_CONFIG_DIR.
+gh_stack_data_dir: "{{ ansible_facts['env'].get('XDG_DATA_HOME') or ansible_facts['env']['HOME'] ~ '/.local/share' }}/gh"

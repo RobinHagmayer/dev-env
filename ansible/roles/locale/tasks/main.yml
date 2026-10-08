@@ -1,0 +1,16 @@
+---
+- name: Check supported distribution for the language pack
+  ansible.builtin.assert:
+    that: ansible_facts['distribution'] == 'Ubuntu'
+    fail_msg: The locale role supports Ubuntu only.
+
+# Provides the German locale used for dates, currency and units. The user
+# session selects it through the Stow `locale` package, not system-wide.
+- name: Install the language pack
+  become: true
+  tags: [packages]
+  ansible.builtin.apt:
+    name: "{{ locale_language_pack }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600

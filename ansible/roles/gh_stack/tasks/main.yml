@@ -1,0 +1,113 @@
+---
+- name: Require an exact gh stack release
+  ansible.builtin.assert:
+    that:
+      - gh_stack_version is string
+      - gh_stack_version is match('^v[0-9]+\.[0-9]+\.[0-9]+$')
+    fail_msg: gh_stack_version must be an exact release tag (e.g. v0.2.0).
+
+# The dependency installs gh in normal mode. On a fresh check-mode run it may
+# still be absent, so do not try to execute it in that case.
+- name: Check whether GitHub CLI is available
+  ansible.builtin.command:
+    argv: [gh, --version]
+  register: gh_stack_cli
+  changed_when: false
+  failed_when: not ansible_check_mode and gh_stack_cli.rc != 0
+  check_mode: false
+
+- name: Reconcile the pinned gh stack extension
+  when: gh_stack_cli.rc == 0
+  block:
+    - name: List installed GitHub CLI extensions
+      ansible.builtin.command:
+        argv: [gh, extension, list]
+      register: gh_stack_extensions
+      changed_when: false
+      check_mode: false
+
+    - name: Check gh stack manifest
+      ansible.builtin.stat:
+        path: "{{ gh_stack_data_dir }}/extensions/gh-stack/manifest.yml"
+      register: gh_stack_manifest_file
+
+    - name: Read gh stack manifest
+      ansible.builtin.slurp:
+        src: "{{ gh_stack_data_dir }}/extensions/gh-stack/manifest.yml"
+      register: gh_stack_manifest_raw
+      when: gh_stack_manifest_file.stat.exists
+
+    - name: Decode gh stack manifest
+      ansible.builtin.set_fact:
+        gh_stack_manifest: "{{ (gh_stack_manifest_raw.content | b64decode | from_yaml) if gh_stack_manifest_file.stat.exists else {} }}"
+
+    - name: Check gh stack executable
+      ansible.builtin.stat:
+        path: "{{ gh_stack_data_dir }}/extensions/gh-stack/gh-stack"
+      register: gh_stack_binary
+
+    # gh extension list does not expose whether a matching release is pinned.
+    # The binary-extension manifest is written by gh extension install --pin.
+    - name: Determine whether gh stack needs installation
+      ansible.builtin.set_fact:
+        gh_stack_present: "{{ gh_stack_extensions.stdout_lines | select('match', '^gh stack\\s') | list | length > 0 }}"
+        gh_stack_needs_install: >-
+          {{ gh_stack_manifest.get('owner') != 'github'
+             or gh_stack_manifest.get('name') != 'gh-stack'
+             or gh_stack_manifest.get('host') != 'github.com'
+             or gh_stack_manifest.get('tag') != gh_stack_version
+             or gh_stack_manifest.get('ispinned') != true
+             or not gh_stack_binary.stat.exists
+             or not gh_stack_binary.stat.get('executable', false) }}
+
+    # Fail before removing the working extension if the requested release
+    # does not exist. Downloads still require network access and gh authentication.
+    - name: Check the requested gh stack release exists
+      ansible.builtin.command:
+        argv: [gh, release, view, "{{ gh_stack_version }}", --repo, github/gh-stack, --json, tagName]
+      changed_when: false
+      when:
+        - gh_stack_needs_install
+        - not ansible_check_mode
+
+    # --force upgrades to latest; it does not reconcile a requested --pin.
+    - name: Remove gh stack when its installation differs
+      ansible.builtin.command:
+        argv: [gh, extension, remove, stack]
+      changed_when: true
+      when:
+        - gh_stack_needs_install
+        - gh_stack_present
+        - not ansible_check_mode
+
+    - name: Install the pinned gh stack release
+      ansible.builtin.command:
+        argv: [gh, extension, install, github/gh-stack, --pin, "{{ gh_stack_version }}"]
+      changed_when: true
+      when:
+        - gh_stack_needs_install
+        - not ansible_check_mode
+
+    - name: Read the installed gh stack manifest
+      ansible.builtin.slurp:
+        src: "{{ gh_stack_data_dir }}/extensions/gh-stack/manifest.yml"
+      register: gh_stack_verified_raw
+      when: not ansible_check_mode
+
+    - name: Verify the gh stack executable
+      ansible.builtin.command:
+        argv: [gh, stack, --version]
+      changed_when: false
+      when: not ansible_check_mode
+
+    - name: Verify the gh stack repository, release and pin
+      vars:
+        gh_stack_verified: "{{ gh_stack_verified_raw.content | b64decode | from_yaml }}"
+      ansible.builtin.assert:
+        that:
+          - gh_stack_verified.owner == 'github'
+          - gh_stack_verified.name == 'gh-stack'
+          - gh_stack_verified.host == 'github.com'
+          - gh_stack_verified.tag == gh_stack_version
+          - gh_stack_verified.ispinned == true
+      when: not ansible_check_mode
