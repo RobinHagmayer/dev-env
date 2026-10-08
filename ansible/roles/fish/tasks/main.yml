@@ -4,17 +4,58 @@
     that: ansible_facts['distribution'] == 'Ubuntu'
     fail_msg: The Fish PPA role supports Ubuntu only.
 
+- name: Install or validate system packages for Fish
+  ansible.builtin.include_role:
+    name: system_packages
+    apply:
+      tags: [packages]
+  vars:
+    system_packages_names: "{{ fish_apt_packages }}"
+    system_packages_bootstrap_playbook: fish.yml
+  tags: [packages]
+
+- name: Validate the pinned Fish without sudo
+  when: not (manage_system_packages | default(true))
+  tags: [packages]
+  block:
+    - name: Read the installed Fish package
+      ansible.builtin.command:
+        argv: [dpkg-query, --show, "--showformat=${db:Status-Status} ${Version}", fish]
+        expand_argument_vars: false
+      register: fish_readonly_package
+      changed_when: false
+      failed_when: fish_readonly_package.rc not in [0, 1]
+      check_mode: false
+
+    - name: Require the pinned Fish package
+      ansible.builtin.assert:
+        that:
+          - fish_readonly_package.rc == 0
+          - fish_readonly_package.stdout | trim == 'installed ' ~ fish_version
+        fail_msg: >-
+          Fish must already be installed at {{ fish_version }} in sudo-free mode.
+          Run: uv run ansible-playbook playbooks/fish.yml --ask-become-pass
+        quiet: true
+
+    - name: Read the Fish package hold
+      ansible.builtin.command:
+        argv: [dpkg, --get-selections, fish]
+      register: fish_readonly_hold
+      changed_when: false
+      check_mode: false
+
+    - name: Require the Fish version hold
+      ansible.builtin.assert:
+        that: fish_readonly_hold.stdout.split() | last == 'hold'
+        fail_msg: >-
+          Fish must be held at its pin. Run: uv run ansible-playbook playbooks/fish.yml --ask-become-pass
+        quiet: true
+
 - name: Install Fish through apt
+  when: manage_system_packages | default(true)
   become: true
   tags: [packages]
   block:
-    - name: Install system packages for the Fish repository
-      ansible.builtin.apt:
-        name: "{{ fish_apt_packages }}"
-        state: present
-        update_cache: true
-        cache_valid_time: 3600
-
     - name: Add the official Fish 4 PPA
       ansible.builtin.deb822_repository:
         name: fish-shell-release-4
