@@ -1,0 +1,5 @@
+---
+# Ubuntu's archive version; apt cannot pin it, so this role does not either.
+podman_packages:
+  - podman
+  - uidmap # newuidmap/newgidmap for rootless user namespaces

@@ -21,3 +21,5 @@
       tags: [pulumi]
     - role: devtunnel
       tags: [devtunnel]
+    - role: podman
+      tags: [podman, packages]

@@ -234,6 +234,19 @@ Rust, pnpm and Go also generate POSIX environment fragments in `~/.config/shell/
 
 ## Dev Tunnels
 
+Podman is managed by `roles/podman` in `dev-tools.yml` (`--tags podman`):
+
+```sh
+uv run ansible-playbook playbooks/dev-tools.yml --tags podman --ask-become-pass
+```
+
+It installs Ubuntu's `podman` and `uidmap` packages, so the version is whatever
+the archive ships (5.7.0 on 26.04) and is not pinned. Upstream has no Linux
+installer script; newer releases need a source build or third-party packages.
+The role also verifies, but never edits, your `/etc/subuid` and `/etc/subgid`
+ranges, which rootless Podman needs. Sudo-free `user-tools.yml` runs only
+validate the packages.
+
 Dev Tunnels is managed by `roles/devtunnel` in `dev-tools.yml`:
 
 ```sh
