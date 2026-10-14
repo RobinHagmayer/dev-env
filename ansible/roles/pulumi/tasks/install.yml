@@ -1,0 +1,82 @@
+---
+- name: Download the official checksum-pinned Pulumi release
+  ansible.builtin.get_url:
+    url: "https://github.com/pulumi/pulumi/releases/download/v{{ pulumi_version }}/pulumi-v{{ pulumi_version }}-linux-x64.tar.gz"
+    dest: "{{ pulumi_download_dir }}/pulumi-v{{ pulumi_version }}-linux-x64.tar.gz"
+    checksum: "sha256:{{ pulumi_sha256 }}"
+    mode: "0644"
+
+- name: Create the retained Pulumi releases directory
+  ansible.builtin.file:
+    path: "{{ pulumi_home }}/releases"
+    state: directory
+    mode: "0700"
+
+# Each installation/repair gets a fresh path; never modify a selected bundle.
+- name: Create a candidate release directory
+  ansible.builtin.tempfile:
+    state: directory
+    path: "{{ pulumi_home }}/releases"
+    prefix: "{{ pulumi_version }}-{{ pulumi_sha256[:12] }}-"
+  register: pulumi_candidate
+
+- name: Initialize candidate verification state
+  ansible.builtin.set_fact:
+    pulumi_candidate_verified: false
+
+- name: Prepare and verify the candidate without touching the active binaries
+  block:
+    - name: Extract Pulumi and all bundled helpers
+      ansible.builtin.unarchive:
+        src: "{{ pulumi_download_dir }}/pulumi-v{{ pulumi_version }}-linux-x64.tar.gz"
+        dest: "{{ pulumi_candidate.path }}"
+        remote_src: true
+
+    - name: Verify the candidate executable before selection
+      ansible.builtin.command:
+        argv: ["{{ pulumi_candidate.path }}/pulumi/pulumi", version]
+      environment:
+        PULUMI_HOME: "{{ pulumi_home }}"
+      register: pulumi_candidate_version
+      changed_when: false
+      failed_when: pulumi_candidate_version.rc != 0 or pulumi_candidate_version.stdout | trim != 'v' ~ pulumi_version
+
+    - name: Name the candidate binary directory
+      ansible.builtin.command:
+        argv: [mv, "{{ pulumi_candidate.path }}/pulumi", "{{ pulumi_candidate.path }}/bin"]
+      changed_when: true
+
+    - name: Calculate the complete binary bundle manifest
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          find . -type f -print0 | sort -z | xargs -0 sha256sum
+        executable: /bin/bash
+        chdir: "{{ pulumi_candidate.path }}/bin"
+      register: pulumi_candidate_manifest
+      changed_when: false
+
+    - name: Record bundle file checksums
+      ansible.builtin.copy:
+        content: "{{ pulumi_candidate_manifest.stdout }}\n"
+        dest: "{{ pulumi_candidate.path }}/SHA256SUMS"
+        mode: "0600"
+
+    - name: Record the pinned archive identity
+      ansible.builtin.copy:
+        content: "{{ pulumi_install_id }}\n"
+        dest: "{{ pulumi_candidate.path }}/install-id"
+        mode: "0600"
+
+    - name: Retain the verified release even if selection fails
+      ansible.builtin.set_fact:
+        pulumi_candidate_verified: true
+
+    - name: Select the verified release with legacy-directory recovery
+      ansible.builtin.include_tasks: select.yml
+  always:
+    - name: Remove only unverified candidates
+      ansible.builtin.file:
+        path: "{{ pulumi_candidate.path }}"
+        state: absent
+      when: not pulumi_candidate_verified

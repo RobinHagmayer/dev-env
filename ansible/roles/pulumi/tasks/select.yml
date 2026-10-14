@@ -1,0 +1,40 @@
+---
+# The first managed installation may have a real bin directory. Preserve it.
+# Once bin is a symlink, Ansible's file module switches it via atomic rename.
+- name: Preserve an unmanaged binary bundle before selecting a release
+  when:
+    - pulumi_current_bin.stat.isdir | default(false)
+    - not (pulumi_current_bin.stat.islnk | default(false))
+  block:
+    - name: Allocate a retained legacy release directory
+      ansible.builtin.tempfile:
+        state: directory
+        path: "{{ pulumi_home }}/releases"
+        prefix: legacy-
+      register: pulumi_legacy_release
+
+    - name: Retain the unmanaged binaries
+      ansible.builtin.command:
+        argv: [mv, "{{ pulumi_home }}/bin", "{{ pulumi_legacy_release.path }}/bin"]
+      register: pulumi_legacy_move
+      changed_when: true
+
+- name: Select the verified binary bundle
+  block:
+    - name: Atomically select the verified release
+      ansible.builtin.file:
+        src: "{{ pulumi_candidate.path }}/bin"
+        dest: "{{ pulumi_home }}/bin"
+        state: link
+        force: true
+        follow: false
+  rescue:
+    - name: Restore the unmanaged binary directory if it was moved
+      ansible.builtin.command:
+        argv: [mv, "{{ pulumi_legacy_release.path }}/bin", "{{ pulumi_home }}/bin"]
+      when: pulumi_legacy_move.rc | default(1) == 0
+      changed_when: true
+
+    - name: Report failed release selection without deleting retained bundles
+      ansible.builtin.fail:
+        msg: "Could not select Pulumi; the previous bundle and verified candidate have been retained."

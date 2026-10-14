@@ -68,93 +68,82 @@
     - "{{ pulumi_home }}"
     - "{{ pulumi_download_dir }}"
 
-# During a migration dry run the executable is still at its old location.
-- name: Locate the installed Pulumi executable
+- name: Locate the current Pulumi bundle
   ansible.builtin.set_fact:
     pulumi_check_home: "{{ ansible_facts['user_dir'] ~ '/.pulumi' if ansible_check_mode and pulumi_legacy.stat.isdir | default(false) else pulumi_home }}"
+    pulumi_install_id: "{{ pulumi_version }} {{ pulumi_sha256 }}"
 
-- name: Inspect the installed executable
+- name: Inspect the current binary path without following links
   ansible.builtin.stat:
-    path: "{{ pulumi_check_home }}/bin/pulumi"
-  register: pulumi_executable
+    path: "{{ pulumi_check_home }}/bin"
+    follow: false
+  register: pulumi_current_bin
 
-- name: Check the installed Pulumi version
-  ansible.builtin.command:
-    argv:
-      - "{{ pulumi_check_home }}/bin/pulumi"
-      - version
-  environment:
-    PULUMI_HOME: "{{ pulumi_check_home }}"
-  when: pulumi_executable.stat.exists | default(false)
-  register: pulumi_installed
+- name: Refuse to replace a binary path that is not a directory or symlink
+  ansible.builtin.assert:
+    that: >-
+      not (pulumi_current_bin.stat.exists | default(false)) or
+      pulumi_current_bin.stat.isdir | default(false) or
+      pulumi_current_bin.stat.islnk | default(false)
+
+- name: Inspect the managed bundle identity
+  ansible.builtin.stat:
+    path: "{{ pulumi_current_bin.stat.lnk_source | dirname }}/install-id"
+  register: pulumi_identity_file
+  when: pulumi_current_bin.stat.islnk | default(false)
+
+- name: Read the managed bundle identity
+  ansible.builtin.slurp:
+    src: "{{ pulumi_identity_file.stat.path }}"
+  register: pulumi_identity
+  when: pulumi_identity_file.stat.isreg | default(false)
+
+# Hashing the recorded files is read-only, unlike 'pulumi version', which writes logs.
+# Also repair executable permissions on any helper, not just the main CLI.
+- name: Verify every file in the current managed binary bundle
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      sha256sum --check --quiet ../SHA256SUMS &&
+      test -z "$(find . -type f ! -executable -print -quit)"
+    executable: /bin/bash
+    chdir: "{{ pulumi_current_bin.stat.lnk_source }}"
+  register: pulumi_bundle_check
   changed_when: false
   failed_when: false
   check_mode: false
+  when:
+    - pulumi_current_bin.stat.islnk | default(false)
+    - (pulumi_identity.content | default('') | b64decode | trim) == pulumi_install_id
 
-- name: Determine whether Pulumi needs installation
+- name: Determine whether Pulumi needs installation or repair
   ansible.builtin.set_fact:
-    pulumi_needs_install: "{{ pulumi_installed.rc | default(1) != 0 or pulumi_installed.stdout | default('') | trim != 'v' ~ pulumi_version }}"
+    pulumi_needs_install: >-
+      {{ (pulumi_identity.content | default('') | b64decode | trim) != pulumi_install_id or
+         pulumi_bundle_check.rc | default(1) != 0 }}
 
-- name: Install the checksum-pinned Pulumi archive
+- name: Report the planned Pulumi installation or repair
+  ansible.builtin.debug:
+    msg: "Would install and select the verified Pulumi {{ pulumi_version }} bundle."
+  changed_when: true
+  when:
+    - ansible_check_mode
+    - pulumi_needs_install
+
+- name: Install and select the checksum-pinned Pulumi bundle
+  ansible.builtin.include_tasks: install.yml
   when:
     - pulumi_needs_install
     - not ansible_check_mode
-  block:
-    - name: Download the official Pulumi release
-      ansible.builtin.get_url:
-        url: "https://github.com/pulumi/pulumi/releases/download/v{{ pulumi_version }}/pulumi-v{{ pulumi_version }}-linux-x64.tar.gz"
-        dest: "{{ pulumi_download_dir }}/pulumi-v{{ pulumi_version }}-linux-x64.tar.gz"
-        checksum: "sha256:{{ pulumi_sha256 }}"
-        mode: "0644"
 
-    - name: Create a staging directory alongside the installation
-      ansible.builtin.tempfile:
-        state: directory
-        path: "{{ pulumi_home }}"
-        prefix: .install-
-      register: pulumi_staging
-
-    - name: Extract and verify before replacing binaries
-      block:
-        - name: Extract Pulumi and all bundled helpers
-          ansible.builtin.unarchive:
-            src: "{{ pulumi_download_dir }}/pulumi-v{{ pulumi_version }}-linux-x64.tar.gz"
-            dest: "{{ pulumi_staging.path }}"
-            remote_src: true
-
-        - name: Verify the staged executable
-          ansible.builtin.command:
-            argv: ["{{ pulumi_staging.path }}/pulumi/pulumi", version]
-          environment:
-            PULUMI_HOME: "{{ pulumi_home }}"
-          register: pulumi_staged_version
-          changed_when: false
-          failed_when: pulumi_staged_version.stdout | trim != 'v' ~ pulumi_version
-
-        # Replace only bin, never credentials, plugins, or backend data.
-        - name: Remove the previous binary bundle
-          ansible.builtin.file:
-            path: "{{ pulumi_home }}/bin"
-            state: absent
-
-        - name: Install the verified binary bundle
-          ansible.builtin.command:
-            argv: [mv, "{{ pulumi_staging.path }}/pulumi", "{{ pulumi_home }}/bin"]
-          changed_when: true
-      always:
-        - name: Remove the staging directory
-          ansible.builtin.file:
-            path: "{{ pulumi_staging.path }}"
-            state: absent
-
-- name: Verify the installed Pulumi version
+- name: Verify the selected Pulumi executable
   ansible.builtin.command:
     argv: ["{{ pulumi_home }}/bin/pulumi", version]
   environment:
     PULUMI_HOME: "{{ pulumi_home }}"
   register: pulumi_verified
   changed_when: false
-  failed_when: pulumi_verified.stdout | trim != 'v' ~ pulumi_version
+  failed_when: pulumi_verified.rc != 0 or pulumi_verified.stdout | trim != 'v' ~ pulumi_version
   when: not ansible_check_mode
 
 - name: Generate the shared Pulumi environment

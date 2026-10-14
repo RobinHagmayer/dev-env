@@ -27,8 +27,10 @@ settings. Do not edit those generated files: change the corresponding Ansible
 role defaults and rerun the playbook. Rust uses `~/.local/share/cargo` and
 `~/.local/share/rustup`; Go uses its default GOPATH and discovers its GOROOT.
 Pulumi uses `${XDG_DATA_HOME:-$HOME/.local/share}/pulumi` for its binaries and
-runtime home. Its role pins the release and archive checksum, migrates an existing
-`~/.pulumi` without a compatibility symlink, and refuses to merge two homes.
+runtime home. Its role pins the release and archive checksum, retains release
+bundles behind a `bin` symlink, and repairs missing or changed bundled helpers.
+It migrates an existing `~/.pulumi` without a compatibility symlink and refuses
+to merge two homes.
 Run `dev-tools.yml --tags pulumi` to install or reconcile it. Do not use the default
 `curl | sh` installer: it creates `~/.pulumi` and can edit the Stow-managed Bash config.
 
