@@ -1,0 +1,8 @@
+#!/bin/sh
+# Keep ordinary nvim and all of its app directories untouched.
+export NVIM_APPNAME=nvim-modern
+tools_bin="${XDG_DATA_HOME:-$HOME/.local/share}/nvim-modern/tools/node_modules/.bin"
+if [ -d "$tools_bin" ]; then export PATH="$tools_bin:$PATH"; fi
+runtime="${NVIM_MODERN_BIN:-$HOME/.local/opt/nvim-modern/bin/nvim}"
+if [ -x "$runtime" ]; then exec "$runtime" "$@"; fi
+exec nvim "$@"

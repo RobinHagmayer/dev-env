@@ -12,7 +12,7 @@
   ansible.builtin.assert:
     that:
       - ansible_facts['architecture'] == 'x86_64'
-      - neovim_version is match('^v[0-9]+\.[0-9]+\.[0-9]+$')
+      - neovim_version is match('^v[0-9]+\.[0-9]+\.[0-9]+$') or (neovim_user_install and neovim_version is match('^[0-9a-f]{40}$'))
     fail_msg: The DEB file name below is only checked for x86_64.
 
 - name: Check out Neovim source
@@ -38,6 +38,7 @@
 - name: Build Neovim and package it as DEB
   # A dry run cannot build the DEB needed by the installation task.
   when:
+    - not neovim_user_install
     - not ansible_check_mode
     - >-
       neovim_installed.rc != 0 or
@@ -70,3 +71,58 @@
         allow_downgrade: true
       become: true
       tags: [packages]
+
+# Parallel nightly builds are opt-in and install as the normal user.
+- name: Inspect the user-prefix Neovim build signature
+  ansible.builtin.slurp:
+    src: "{{ neovim_install_prefix }}/.build-signature"
+  register: neovim_user_signature
+  failed_when: false
+  when: neovim_user_install
+
+- name: Inspect the user-prefix Neovim binary
+  ansible.builtin.stat:
+    path: "{{ neovim_install_prefix }}/bin/nvim"
+  register: neovim_user_binary
+  when: neovim_user_install
+
+- name: Build and install isolated Neovim
+  when:
+    - neovim_user_install
+    - not ansible_check_mode
+    - >-
+      not neovim_user_binary.stat.exists or
+      (neovim_user_signature.content | default('') | b64decode | trim) !=
+      neovim_version ~ ':' ~ neovim_build_type
+  block:
+    - name: Clean previous isolated build output
+      ansible.builtin.command:
+        argv: [make, distclean]
+        chdir: "{{ neovim_src_dir }}"
+      changed_when: false
+
+    - name: Build isolated Neovim
+      ansible.builtin.command:
+        argv:
+          - make
+          - "CMAKE_BUILD_TYPE={{ neovim_build_type }}"
+          - "CMAKE_INSTALL_PREFIX={{ neovim_install_prefix }}"
+        chdir: "{{ neovim_src_dir }}"
+      changed_when: true
+
+    - name: Install isolated Neovim without sudo
+      ansible.builtin.command:
+        argv: [cmake, --install, build]
+        chdir: "{{ neovim_src_dir }}"
+      changed_when: true
+
+    - name: Verify isolated Neovim starts
+      ansible.builtin.command:
+        argv: ["{{ neovim_install_prefix }}/bin/nvim", --clean, --headless, "+qa"]
+      changed_when: false
+
+    - name: Record the successful isolated build signature
+      ansible.builtin.copy:
+        content: "{{ neovim_version }}:{{ neovim_build_type }}\n"
+        dest: "{{ neovim_install_prefix }}/.build-signature"
+        mode: "0644"

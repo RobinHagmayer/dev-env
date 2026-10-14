@@ -11,7 +11,7 @@ Generated 2026-07-11 from local package metadata. This is a rebuild aid, not a s
 - Java/OpenJDK 21.0.11
 - Docker 29.6.1; Compose plugin 5.3.0
 - Azure CLI 2.88.0; GitHub CLI 2.96.0
-- Neovim 0.12.4; fish 4.8.0
+- Neovim: original system editor retained; modern app uses separately pinned upstream HEAD (see `ansible/playbooks/neovim-modern.yml`), or Neovim 0.12+; fish 4.8.0
 
 ## Install manually / through approved company channels
 
@@ -73,7 +73,7 @@ zellij@0.44.3
 
 ## Editor and fonts
 
-Neovim config and lock file are already stowed. The observed optional plugins are:
+The original Neovim config and lockfile remain available as a fallback. Restore the independent `nvim-modern` app following [its README](../nvim-modern/README.md); its plugins and tools are isolated by `NVIM_APPNAME`. The following plugin list is a historical snapshot of the original config:
 
 ```text
 blink.cmp fff.nvim kanagawa.nvim lspkind mason-lspconfig
@@ -87,6 +87,6 @@ Use `ansible/playbooks/nerd-fonts.yml` to install Meslo Nerd Fonts. The older do
 1. Install company-managed software and sign in.
 2. Clone the dotfiles repository. Install developer tools with the playbooks in `ansible/`; Rust, pnpm and Go also generate their terminal environment fragments.
 3. Back up local startup files, then stow `shell bash fish ghostty` following the dotfiles README. Include other packages such as `uv` after review; resolve existing file conflicts rather than blindly adopting them.
-4. Install remaining APT/Snap/Flatpak applications and global tools. Open Neovim to restore plugins/tools from configuration.
+4. Install remaining APT/Snap/Flatpak applications and global tools. Optionally build `ansible/playbooks/neovim-modern.yml`, run `bash nvim-modern/setup-tools.sh`, then stow `nvim-modern`. Launch `nvim-modern` to restore its isolated plugins/tools; plain `nvim` remains the fallback.
 5. Re-authenticate GitHub, cloud, Docker and other CLIs; restore only approved Bitwarden secrets.
 6. Restore supported Neo4j dumps after installing Neo4j Desktop.
