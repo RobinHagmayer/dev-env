@@ -1,0 +1,57 @@
+---
+- name: Download the official checksum-pinned Dev Tunnels binary
+  ansible.builtin.get_url:
+    url: "{{ devtunnel_url }}"
+    dest: "{{ devtunnel_download_dir }}/devtunnel-{{ devtunnel_version }}-{{ devtunnel_sha256 }}-linux-x64"
+    checksum: "sha256:{{ devtunnel_sha256 }}"
+    mode: "0644"
+
+# Never mutate the selected release, even when repairing the same pin.
+- name: Allocate a retained candidate release
+  ansible.builtin.tempfile:
+    state: directory
+    path: "{{ devtunnel_install_dir }}/releases"
+    prefix: "{{ devtunnel_version }}-{{ devtunnel_sha256[:12] }}-"
+  register: devtunnel_candidate
+
+- name: Initialize candidate verification state
+  ansible.builtin.set_fact:
+    devtunnel_candidate_verified: false
+
+- name: Prepare and verify the candidate before release selection
+  block:
+    - name: Copy the pinned executable into the candidate
+      ansible.builtin.copy:
+        src: "{{ devtunnel_download_dir }}/devtunnel-{{ devtunnel_version }}-{{ devtunnel_sha256 }}-linux-x64"
+        dest: "{{ devtunnel_candidate.path }}/devtunnel"
+        remote_src: true
+        mode: "0755"
+
+    - name: Verify the candidate version and exit status
+      ansible.builtin.command:
+        argv: ["{{ devtunnel_candidate.path }}/devtunnel", --version]
+      environment:
+        DOTNET_BUNDLE_EXTRACT_BASE_DIR: "{{ devtunnel_cache_dir }}/devtunnel/dotnet"
+      register: devtunnel_candidate_version
+      changed_when: false
+      failed_when: >-
+        devtunnel_candidate_version.rc != 0 or
+        ('Tunnel CLI version: ' ~ devtunnel_version) not in devtunnel_candidate_version.stdout.splitlines()
+
+    - name: Retain the verified candidate even if selection fails
+      ansible.builtin.set_fact:
+        devtunnel_candidate_verified: true
+
+    - name: Atomically select the verified release
+      ansible.builtin.file:
+        src: "{{ devtunnel_candidate.path }}"
+        dest: "{{ devtunnel_install_dir }}/current"
+        state: link
+        force: true
+        follow: false
+  always:
+    - name: Remove only unverified candidates
+      ansible.builtin.file:
+        path: "{{ devtunnel_candidate.path }}"
+        state: absent
+      when: not devtunnel_candidate_verified

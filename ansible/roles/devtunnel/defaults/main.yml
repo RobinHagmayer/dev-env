@@ -1,0 +1,12 @@
+---
+devtunnel_apt_packages:
+  - ca-certificates
+  - libsecret-1-0
+devtunnel_version: "1.0.2115+e16833f284"
+# Linux x64 digest from Homebrew's devtunnel cask, verified against the asset.
+devtunnel_sha256: "723d6aebdc226064aef321258fb17c8a2770c9cc2bd05004c0fb83e72b302c3f"
+devtunnel_url: "https://tunnelsassetsprod.blob.core.windows.net/cli/{{ devtunnel_version }}/linux-x64-devtunnel"
+devtunnel_install_dir: "{{ ansible_facts['user_dir'] }}/.local/opt/devtunnel"
+devtunnel_bin_dir: "{{ ansible_facts['user_dir'] }}/.local/bin"
+devtunnel_cache_dir: "{{ ansible_facts['env'].get('XDG_CACHE_HOME') or ansible_facts['user_dir'] ~ '/.cache' }}"
+devtunnel_download_dir: "{{ devtunnel_cache_dir }}/ansible-downloads"

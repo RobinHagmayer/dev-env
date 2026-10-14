@@ -20,3 +20,5 @@
       tags: [gh_stack]
     - role: pulumi
       tags: [pulumi]
+    - role: devtunnel
+      tags: [devtunnel]

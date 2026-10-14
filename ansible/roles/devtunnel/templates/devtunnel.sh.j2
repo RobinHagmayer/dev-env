@@ -1,0 +1,5 @@
+#!/bin/sh
+# Managed by Ansible. Scope .NET extraction to this CLI, not every .NET app.
+export DOTNET_BUNDLE_EXTRACT_BASE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/devtunnel/dotnet"
+mkdir -p "$DOTNET_BUNDLE_EXTRACT_BASE_DIR" || exit 1
+exec {{ (devtunnel_install_dir ~ '/current/devtunnel') | quote }} "$@"

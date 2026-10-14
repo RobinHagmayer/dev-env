@@ -160,6 +160,47 @@ Role-boundary regression checks are documented in [tests/README.md](tests/README
 
 Rust, pnpm and Go also generate POSIX environment fragments in `~/.config/shell/env.d`. The `shell` Stow package of this repository (`~/.dotfiles/shell`) loads them for Bash and its interactive Fish launcher; installation paths and generated exports come from the same role defaults. These files configure terminal environments, not GNOME or systemd services. Rust data lives in `~/.local/share/cargo` (`rust_home`) and `~/.local/share/rustup` (`rust_toolchain_home`). Existing `~/.cargo` and `~/.rustup` directories are moved there, with compatibility symlinks retained for old terminals; the role refuses to merge two existing installations. Rust uses `--no-modify-path`, and pnpm's installer runs with an isolated HOME so neither adds configuration to your real startup files. Rerun `dev-tools.yml --tags rust,pnpm,go` after changing their settings. Removing a tool does not automatically remove its environment fragment.
 
+## Dev Tunnels
+
+Dev Tunnels is managed by `roles/devtunnel` in `dev-tools.yml`:
+
+```sh
+uv run ansible-playbook playbooks/dev-tools.yml --tags devtunnel --ask-become-pass
+```
+
+The role pins the full CLI build version and SHA256 digest of Microsoft's
+version-specific Linux x64 binary. Update both in role defaults deliberately;
+the checksum is independently published in Homebrew's devtunnel cask.
+It does not use the upstream shell installer or change shell startup files.
+
+Binaries live in retained candidate directories under
+`~/.local/opt/devtunnel/releases`. After checksum and runtime version/exit-status
+verification, an atomic `current` symlink switch selects the release.
+Reruns hash the selected binary and repair content or executable-permission
+drift without changing the active release in place. Older releases and verified
+candidates are retained; failed unverified candidates are removed.
+Do not run concurrent installations. Upstream retention of old assets is not
+guaranteed; checksum validation rejects changed downloads.
+
+An Ansible-managed launcher in `~/.local/bin/devtunnel` scopes
+`DOTNET_BUNDLE_EXTRACT_BASE_DIR` to
+`${XDG_CACHE_HOME:-$HOME/.cache}/devtunnel/dotnet`, avoiding `~/.net`.
+Download caching also respects `XDG_CACHE_HOME`.
+The CLI itself stores mutable settings under
+`${XDG_DATA_HOME:-$HOME/.local/share}/DevTunnels`; these are not tracked or migrated.
+Existing `~/bin/devtunnel` installations are left alone; check `command -v devtunnel`
+and remove legacy PATH entries manually if necessary.
+
+Only prerequisite apt tasks use sudo (tagged `packages`). Authentication remains
+manual: `devtunnel user login`. Your shared shell loader already supplies
+`~/.local/bin`; no global .NET environment fragment or new Stow package is needed.
+Check mode hashes files but does not download or execute the CLI.
+Runtime verification during installation uses `--version`, which contacts
+Microsoft's tunnel service and can initialize local CLI settings.
+The wrapper also works outside initialized terminal shells; desktop services
+must supply any custom XDG paths explicitly.
+Role-boundary checks are documented in [tests/README.md](tests/README.md).
+
 ## Version policy
 
 Tool versions are configured in `roles/<role>/defaults/main.yml`. A new upstream release alone must not change the selected version: update the pin (and any corresponding checksums), review/commit that change, then rerun the relevant playbook. Exact Node.js, npm, Rust and rustup versions are pinned too; `stable`, `latest`, bare Node majors and Ghostty `tip` are not accepted. Pi's two manifest checksums must be updated along with its version. Existing older releases/toolchains are retained rather than pruned.

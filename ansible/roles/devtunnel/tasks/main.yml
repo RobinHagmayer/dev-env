@@ -1,0 +1,79 @@
+---
+- name: Install system packages for Dev Tunnels
+  ansible.builtin.apt:
+    name: "{{ devtunnel_apt_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  become: true
+  tags: [packages]
+
+- name: Validate the pinned Dev Tunnels release and paths
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['system'] == 'Linux'
+      - ansible_facts['architecture'] == 'x86_64'
+      - devtunnel_version is match('^[0-9]+\.[0-9]+\.[0-9]+\+[0-9a-f]+$')
+      - devtunnel_sha256 is match('^[0-9a-f]{64}$')
+      - devtunnel_install_dir is match('^/')
+      - devtunnel_bin_dir is match('^/')
+      - devtunnel_cache_dir is match('^/')
+      - devtunnel_download_dir is match('^/')
+    fail_msg: This pin supports Linux x86_64 only; use absolute paths.
+
+- name: Inspect the release selector
+  ansible.builtin.stat:
+    path: "{{ devtunnel_install_dir }}/current"
+    follow: false
+  register: devtunnel_current
+
+- name: Refuse to replace an unmanaged release selector
+  ansible.builtin.assert:
+    that: >-
+      not (devtunnel_current.stat.exists | default(false)) or
+      devtunnel_current.stat.islnk | default(false)
+    fail_msg: Resolve the unmanaged current path manually.
+
+# Hash instead of executing the CLI: --version contacts the tunnel service.
+- name: Inspect the selected executable
+  ansible.builtin.stat:
+    path: "{{ devtunnel_install_dir }}/current/devtunnel"
+    follow: true
+    checksum_algorithm: sha256
+  register: devtunnel_binary
+
+- name: Determine whether installation or repair is needed
+  ansible.builtin.set_fact:
+    devtunnel_needs_install: >-
+      {{ devtunnel_binary.stat.checksum | default('') != devtunnel_sha256 or
+         not (devtunnel_binary.stat.executable | default(false)) }}
+
+- name: Create Dev Tunnels installation directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ devtunnel_install_dir }}/releases"
+    - "{{ devtunnel_bin_dir }}"
+    - "{{ devtunnel_download_dir }}"
+
+- name: Report the planned Dev Tunnels installation or repair
+  ansible.builtin.debug:
+    msg: "Would install and select verified Dev Tunnels {{ devtunnel_version }}."
+  changed_when: true
+  when:
+    - ansible_check_mode
+    - devtunnel_needs_install
+
+- name: Install and select the verified release
+  ansible.builtin.include_tasks: install.yml
+  when:
+    - devtunnel_needs_install
+    - not ansible_check_mode
+
+- name: Install the XDG-aware Dev Tunnels launcher
+  ansible.builtin.template:
+    src: devtunnel.sh.j2
+    dest: "{{ devtunnel_bin_dir }}/devtunnel"
+    mode: "0755"

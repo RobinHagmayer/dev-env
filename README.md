@@ -54,6 +54,12 @@ completion, `~/.bash_aliases`) with the shared environment loader added on top.
 After a distro upgrade, refresh it from `/etc/skel/.bashrc` and keep the loader
 block. Back up and review existing startup files before replacing them.
 
+Dev Tunnels is installed with `dev-tools.yml --tags devtunnel`, using a pinned,
+checksum-verified Microsoft binary and retained releases under `~/.local/opt/devtunnel`.
+Its launcher in `~/.local/bin` keeps .NET extraction in the XDG cache.
+CLI settings and authentication stay local; no upstream installer or shell
+startup edits are needed. See [ansible/README.md](ansible/README.md#dev-tunnels).
+
 ## Other optional Stow packages
 
 ```sh
