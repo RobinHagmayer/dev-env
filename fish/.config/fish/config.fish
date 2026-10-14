@@ -4,4 +4,5 @@ if status is-interactive
     set -g fish_greeting
     alias cp="cp -i"
     alias mv="mv -i"
+    alias docker="podman"
 end
