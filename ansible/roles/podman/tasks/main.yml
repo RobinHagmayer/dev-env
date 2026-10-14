@@ -9,6 +9,19 @@
     system_packages_bootstrap_playbook: dev-tools.yml
   tags: [packages]
 
+- name: Ensure user-local binary directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_facts['user_dir'] }}/.local/bin"
+    state: directory
+    mode: "0755"
+
+- name: Provide Docker CLI name for Podman
+  ansible.builtin.file:
+    src: /usr/bin/podman
+    dest: "{{ ansible_facts['user_dir'] }}/.local/bin/docker"
+    state: link
+    force: false
+
 # Rootless Podman needs subordinate ID ranges. Verify, never edit: they are
 # account-level state that Ubuntu normally creates with the user.
 - name: Read subordinate ID ranges

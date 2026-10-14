@@ -247,6 +247,10 @@ The role also verifies, but never edits, your `/etc/subuid` and `/etc/subgid`
 ranges, which rootless Podman needs. Sudo-free `user-tools.yml` runs only
 validate the packages.
 
+The role also creates `~/.local/bin/docker -> /usr/bin/podman` without replacing
+an existing regular file. This supports non-interactive callers when
+`~/.local/bin` is on their PATH; it does not provide Docker daemon/API compatibility.
+
 Dev Tunnels is managed by `roles/devtunnel` in `dev-tools.yml`:
 
 ```sh
