@@ -21,11 +21,16 @@ parser is needed.
 
 Install tools with the playbooks in `ansible/` (run them from that directory,
 e.g. `cd ~/.dotfiles/ansible && uv run ansible-playbook playbooks/dev-tools.yml`).
-Its Rust, pnpm
-and Go roles generate `~/.config/shell/env.d/*.sh` from their installation
+Its Rust, pnpm,
+Go and Pulumi roles generate `~/.config/shell/env.d/*.sh` from their installation
 settings. Do not edit those generated files: change the corresponding Ansible
 role defaults and rerun the playbook. Rust uses `~/.local/share/cargo` and
 `~/.local/share/rustup`; Go uses its default GOPATH and discovers its GOROOT.
+Pulumi uses `${XDG_DATA_HOME:-$HOME/.local/share}/pulumi` for its binaries and
+runtime home. Its role pins the release and archive checksum, migrates an existing
+`~/.pulumi` without a compatibility symlink, and refuses to merge two homes.
+Run `dev-tools.yml --tags pulumi` to install or reconcile it. Do not use the default
+`curl | sh` installer: it creates `~/.pulumi` and can edit the Stow-managed Bash config.
 
 The `shell` package provides `~/.config/shell/env.sh`, which loads those
 fragments and adds `~/.local/bin` without duplicating PATH entries. It also

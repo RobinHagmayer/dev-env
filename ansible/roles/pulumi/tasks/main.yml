@@ -1,0 +1,168 @@
+---
+- name: Install system packages for Pulumi
+  ansible.builtin.apt:
+    name: "{{ pulumi_apt_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  become: true
+  tags: [packages]
+
+- name: Validate the pinned Pulumi release and paths
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['system'] == 'Linux'
+      - ansible_facts['architecture'] == 'x86_64'
+      - pulumi_version is match('^[0-9]+\.[0-9]+\.[0-9]+$')
+      - pulumi_sha256 is match('^[0-9a-f]{64}$')
+      - pulumi_home is match('^/')
+      - pulumi_download_dir is match('^/')
+      - pulumi_environment_dir is match('^/')
+      - pulumi_home != ansible_facts['user_dir'] ~ '/.pulumi'
+    fail_msg: This pin supports Linux x86_64 only; use absolute XDG paths.
+
+- name: Inspect the legacy Pulumi home
+  ansible.builtin.stat:
+    path: "{{ ansible_facts['user_dir'] }}/.pulumi"
+  register: pulumi_legacy
+
+- name: Inspect the new Pulumi home
+  ansible.builtin.stat:
+    path: "{{ pulumi_home }}"
+  register: pulumi_destination
+
+- name: Refuse to replace a legacy file or symlink
+  ansible.builtin.assert:
+    that:
+      - pulumi_legacy.stat.isdir | default(false)
+      - not (pulumi_legacy.stat.islnk | default(false))
+    fail_msg: Resolve the legacy Pulumi file or symlink manually.
+  when: pulumi_legacy.stat.exists | default(false) or pulumi_legacy.stat.islnk | default(false)
+
+- name: Refuse to merge two Pulumi homes
+  ansible.builtin.assert:
+    that:
+      - not (pulumi_destination.stat.exists | default(false))
+      - not (pulumi_destination.stat.islnk | default(false))
+    fail_msg: Both Pulumi homes exist; resolve them manually without overwriting credentials or state.
+  when: pulumi_legacy.stat.isdir | default(false)
+
+- name: Create the Pulumi parent directory
+  ansible.builtin.file:
+    path: "{{ pulumi_home | dirname }}"
+    state: directory
+    mode: "0755"
+
+- name: Migrate the complete legacy Pulumi home without a compatibility symlink
+  ansible.builtin.command:
+    argv: [mv, "{{ ansible_facts['user_dir'] }}/.pulumi", "{{ pulumi_home }}"]
+  when: pulumi_legacy.stat.isdir | default(false)
+  changed_when: true
+
+- name: Create the Pulumi home and download cache
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "{{ '0700' if item == pulumi_home else '0755' }}"
+  loop:
+    - "{{ pulumi_home }}"
+    - "{{ pulumi_download_dir }}"
+
+# During a migration dry run the executable is still at its old location.
+- name: Locate the installed Pulumi executable
+  ansible.builtin.set_fact:
+    pulumi_check_home: "{{ ansible_facts['user_dir'] ~ '/.pulumi' if ansible_check_mode and pulumi_legacy.stat.isdir | default(false) else pulumi_home }}"
+
+- name: Inspect the installed executable
+  ansible.builtin.stat:
+    path: "{{ pulumi_check_home }}/bin/pulumi"
+  register: pulumi_executable
+
+- name: Check the installed Pulumi version
+  ansible.builtin.command:
+    argv:
+      - "{{ pulumi_check_home }}/bin/pulumi"
+      - version
+  environment:
+    PULUMI_HOME: "{{ pulumi_check_home }}"
+  when: pulumi_executable.stat.exists | default(false)
+  register: pulumi_installed
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Determine whether Pulumi needs installation
+  ansible.builtin.set_fact:
+    pulumi_needs_install: "{{ pulumi_installed.rc | default(1) != 0 or pulumi_installed.stdout | default('') | trim != 'v' ~ pulumi_version }}"
+
+- name: Install the checksum-pinned Pulumi archive
+  when:
+    - pulumi_needs_install
+    - not ansible_check_mode
+  block:
+    - name: Download the official Pulumi release
+      ansible.builtin.get_url:
+        url: "https://github.com/pulumi/pulumi/releases/download/v{{ pulumi_version }}/pulumi-v{{ pulumi_version }}-linux-x64.tar.gz"
+        dest: "{{ pulumi_download_dir }}/pulumi-v{{ pulumi_version }}-linux-x64.tar.gz"
+        checksum: "sha256:{{ pulumi_sha256 }}"
+        mode: "0644"
+
+    - name: Create a staging directory alongside the installation
+      ansible.builtin.tempfile:
+        state: directory
+        path: "{{ pulumi_home }}"
+        prefix: .install-
+      register: pulumi_staging
+
+    - name: Extract and verify before replacing binaries
+      block:
+        - name: Extract Pulumi and all bundled helpers
+          ansible.builtin.unarchive:
+            src: "{{ pulumi_download_dir }}/pulumi-v{{ pulumi_version }}-linux-x64.tar.gz"
+            dest: "{{ pulumi_staging.path }}"
+            remote_src: true
+
+        - name: Verify the staged executable
+          ansible.builtin.command:
+            argv: ["{{ pulumi_staging.path }}/pulumi/pulumi", version]
+          environment:
+            PULUMI_HOME: "{{ pulumi_home }}"
+          register: pulumi_staged_version
+          changed_when: false
+          failed_when: pulumi_staged_version.stdout | trim != 'v' ~ pulumi_version
+
+        # Replace only bin, never credentials, plugins, or backend data.
+        - name: Remove the previous binary bundle
+          ansible.builtin.file:
+            path: "{{ pulumi_home }}/bin"
+            state: absent
+
+        - name: Install the verified binary bundle
+          ansible.builtin.command:
+            argv: [mv, "{{ pulumi_staging.path }}/pulumi", "{{ pulumi_home }}/bin"]
+          changed_when: true
+      always:
+        - name: Remove the staging directory
+          ansible.builtin.file:
+            path: "{{ pulumi_staging.path }}"
+            state: absent
+
+- name: Verify the installed Pulumi version
+  ansible.builtin.command:
+    argv: ["{{ pulumi_home }}/bin/pulumi", version]
+  environment:
+    PULUMI_HOME: "{{ pulumi_home }}"
+  register: pulumi_verified
+  changed_when: false
+  failed_when: pulumi_verified.stdout | trim != 'v' ~ pulumi_version
+  when: not ansible_check_mode
+
+- name: Generate the shared Pulumi environment
+  ansible.builtin.include_role:
+    name: shell_environment
+  vars:
+    shell_environment_dir: "{{ pulumi_environment_dir }}"
+    shell_environment_name: pulumi
+    shell_environment_exports:
+      PULUMI_HOME: "{{ pulumi_home }}"
+    shell_environment_paths: ["{{ pulumi_home }}/bin"]
