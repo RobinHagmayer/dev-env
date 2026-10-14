@@ -1,0 +1,36 @@
+---
+- name: Install or validate Podman
+  ansible.builtin.include_role:
+    name: system_packages
+    apply:
+      tags: [packages]
+  vars:
+    system_packages_names: "{{ podman_packages }}"
+    system_packages_bootstrap_playbook: dev-tools.yml
+  tags: [packages]
+
+# Rootless Podman needs subordinate ID ranges. Verify, never edit: they are
+# account-level state that Ubuntu normally creates with the user.
+- name: Read subordinate ID ranges
+  ansible.builtin.slurp:
+    src: "/etc/{{ item }}"
+  loop: [subuid, subgid]
+  register: podman_subids
+  tags: [podman]
+
+- name: Require subordinate ID ranges for the current user
+  vars:
+    podman_user: "{{ ansible_facts['user_id'] }}"
+  ansible.builtin.assert:
+    that: >-
+      (item.content | b64decode).splitlines()
+      | select('match', podman_user ~ ':')
+      | list | length > 0
+    fail_msg: >-
+      /etc/{{ item.item }} has no range for {{ podman_user }}; rootless Podman
+      needs one. Add it with: sudo usermod --add-sub{{ 'uids' if item.item == 'subuid' else 'gids' }} 100000-165535 {{ podman_user }}
+    quiet: true
+  loop: "{{ podman_subids.results }}"
+  loop_control:
+    label: "/etc/{{ item.item }}"
+  tags: [podman]
