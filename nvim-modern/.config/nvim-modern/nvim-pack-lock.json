@@ -1,0 +1,69 @@
+{
+  "plugins": {
+    "blink.cmp": {
+      "rev": "78336bc89ee5365633bcf754d93df01678b5c08f",
+      "src": "https://github.com/Saghen/blink.cmp",
+      "version": "1.0.0 - 2.0.0"
+    },
+    "conform.nvim": {
+      "rev": "016802de402556da54c36bd7359b441266b01cdd",
+      "src": "https://github.com/stevearc/conform.nvim",
+      "version": "'master'"
+    },
+    "fff": {
+      "rev": "c188e7a8f90e4ee4aabe18f93d5869dfb4289f12",
+      "src": "https://github.com/dmtrKovalenko/fff",
+      "version": "'main'"
+    },
+    "friendly-snippets": {
+      "rev": "b4d01b0fdf3c9a549961c2f9ffe8dc09be166219",
+      "src": "https://github.com/rafamadriz/friendly-snippets",
+      "version": "'main'"
+    },
+    "kanagawa.nvim": {
+      "rev": "bb85e4bfc8d89b0e62c8fa53ccdd13d12e2f77b3",
+      "src": "https://github.com/rebelot/kanagawa.nvim",
+      "version": "'master'"
+    },
+    "mason-lspconfig.nvim": {
+      "rev": "b3298993d55fa194279b5eb9dbfb3a43da65cadf",
+      "src": "https://github.com/mason-org/mason-lspconfig.nvim",
+      "version": "'main'"
+    },
+    "mason-tool-installer.nvim": {
+      "rev": "443f1ef8b5e6bf47045cb2217b6f748a223cf7dc",
+      "src": "https://github.com/WhoIsSethDaniel/mason-tool-installer.nvim",
+      "version": "'main'"
+    },
+    "mason.nvim": {
+      "rev": "2a6940af80375532e5e9e7c1f2fc6319a1b7a69d",
+      "src": "https://github.com/mason-org/mason.nvim",
+      "version": "'main'"
+    },
+    "mini.nvim": {
+      "rev": "6f0cd5049f414932ba55a5d6f3282a59d55c71a3",
+      "src": "https://github.com/nvim-mini/mini.nvim",
+      "version": "'main'"
+    },
+    "nvim-lspconfig": {
+      "rev": "910f0c4d46aa186641518395bc7e6fffb4d23baf",
+      "src": "https://github.com/neovim/nvim-lspconfig",
+      "version": "'master'"
+    },
+    "nvim-treesitter": {
+      "rev": "e289100ff98969e118c702199d88b764ce9e7fdf",
+      "src": "https://github.com/nvim-treesitter/nvim-treesitter",
+      "version": "'main'"
+    },
+    "nvim-treesitter-textobjects": {
+      "rev": "5c7b0263797dfd1bd6202f2b219f3b53a80b2187",
+      "src": "https://github.com/nvim-treesitter/nvim-treesitter-textobjects",
+      "version": "'main'"
+    },
+    "which-key.nvim": {
+      "rev": "3aab2147e74890957785941f0c1ad87d0a44c15a",
+      "src": "https://github.com/folke/which-key.nvim",
+      "version": "'main'"
+    }
+  }
+}

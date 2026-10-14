@@ -17,3 +17,7 @@
       tags: [pnpm]
     - role: gh_stack
       tags: [gh_stack]
+    - role: pulumi
+      tags: [pulumi]
+    - role: devtunnel
+      tags: [devtunnel]

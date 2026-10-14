@@ -62,10 +62,13 @@ uv run ansible-playbook playbooks/user-tools.yml --tags pi
 uv run ansible-playbook playbooks/user-tools.yml --tags claude,codex
 uv run ansible-playbook playbooks/user-tools.yml --tags go,zig,ghostty
 uv run ansible-playbook playbooks/user-tools.yml --tags gh_stack
+uv run ansible-playbook playbooks/user-tools.yml --tags pulumi,devtunnel
+uv run ansible-playbook playbooks/user-tools.yml --tags neovim-modern
 uv run ansible-playbook playbooks/user-tools.yml --check --diff
 ```
 
-Without tags it reconciles developer tools, AI tools, Ghostty and Nerd Fonts.
+Without tags it reconciles developer tools (including Pulumi and Dev Tunnels),
+AI tools, Ghostty, isolated modern Neovim and Nerd Fonts.
 It reuses the provisioning playbooks with `manage_system_packages: false`,
 including dependency roles. It checks installed prerequisites with
 unprivileged `dpkg-query`; it does **not** install/remove system packages,
@@ -162,10 +165,28 @@ Build Neovim from source and install it as a DEB package (so `dpkg`/`apt remove 
 uv run ansible-playbook playbooks/neovim.yml --ask-become-pass
 ```
 
+For the modern trial config, build the pinned current upstream HEAD into a
+**separate user prefix**, leaving the system Neovim/runtime alone:
+
+```sh
+uv run ansible-playbook playbooks/neovim-modern.yml --ask-become-pass
+# Routine updates after provisioning:
+uv run ansible-playbook playbooks/user-tools.yml --tags neovim-modern
+```
+
+The `nvim-modern` Stow launcher prefers `~/.local/opt/nvim-modern/bin/nvim`.
+The modern playbook selects an exact source commit in its vars; update that SHA
+deliberately after reviewing Neovim's `news-breaking` documentation. The role
+records its successful build signature and rebuilds only when the pin/build
+type changes or its binary is missing. No `sudo` is used for the prefix install.
+The ordinary `neovim.yml` retains the latest stable 0.12.5 system DEB path.
+See [the editor guide](../nvim-modern/README.md) for setup and isolation.
+
 Every role declares the system packages it needs (tasks tagged `packages`).
 Provisioning installs them with sudo; sudo-free reconciliation validates them.
 Keep roles self-contained rather than duplicating prerequisites in a separate
 bootstrap list:
+
 
 ```sh
 uv run ansible-playbook playbooks/dev-tools.yml --tags go,zig --ask-become-pass
@@ -174,7 +195,85 @@ uv run ansible-playbook playbooks/user-tools.yml --tags go,zig
 
 The `gh_stack` role installs the `gh stack` extension (github/gh-stack, stacked pull requests) pinned to `gh_stack_version`, with the `gh` role as a dependency. Both are installed by `playbooks/gh.yml`, or by `uv run ansible-playbook playbooks/dev-tools.yml --tags gh_stack --ask-become-pass`. Only the CLI's system-package tasks use sudo; the extension installs as your normal user. Extension downloads require GitHub CLI authentication (`gh auth login`, or a token supplied externally); credentials are not managed here. Reruns check the extension's repository, release tag, pin state and executable, so an already-correct installation needs no download or change. Different versions and unpinned installations are replaced after checking that the requested release exists; a later download failure can still leave the extension absent. Check mode does not install or remove extensions. The extension directory follows `XDG_DATA_HOME` (otherwise `~/.local/share`).
 
+Pulumi is managed by `roles/pulumi` in `dev-tools.yml` (`--tags pulumi`). It
+pins v3.268.0 and the SHA256 digest of the official Linux x86_64 archive.
+`PULUMI_HOME` defaults to `${XDG_DATA_HOME:-$HOME/.local/share}/pulumi`.
+This relocates Pulumi's combined global configuration/plugin home, rather
+than splitting config/cache/state. The download cache and environment fragment
+respect `XDG_CACHE_HOME` and `XDG_CONFIG_HOME`.
+
+Each installation or repair creates a retained bundle under
+`$PULUMI_HOME/releases/<version>-<checksum-prefix>-<unique-id>/bin`;
+`$PULUMI_HOME/bin` selects it via a symlink. A candidate's version and exit
+status are checked before selection; managed symlinks switch atomically.
+The role records the archive identity and a manifest of every binary/helper's
+SHA256 digest. Reruns repair missing, modified or nonexecutable bundle files,
+and a changed version or checksum triggers installation. The manifest is local
+integrity bookkeeping, not an upstream signature. Older releases and verified
+candidates are retained, not pruned; cleanup is a deliberate manual action.
+
+Existing `~/.pulumi` directories move intact without a compatibility symlink;
+files, symlinks, or two existing homes require manual resolution. An initial
+real `bin` directory is retained under `releases/legacy-*/bin`; converting that
+directory to a symlink has a short gap, with recovery if linking fails.
+Stop Pulumi processes and do not run concurrent installs during migration or
+release selection. Credentials, plugins and backend data are left untouched.
+Check mode only inspects metadata and hashes files: it does not execute Pulumi,
+migrate, download or install, and reports when an installation is planned.
+
+Change the version and checksum together in role defaults, then rerun the
+playbook instead of using the default shell installer or self-update.
+Fish inherits `PULUMI_HOME` and PATH through `interactive-shell`;
+desktop apps/services need explicit environment configuration.
+Remove any old installer PATH stanza from Bash and restart terminals with
+`exec ~/.local/bin/interactive-shell`.
+Role-boundary regression checks are documented in [tests/README.md](tests/README.md).
+
 Rust, pnpm and Go also generate POSIX environment fragments in `~/.config/shell/env.d`. The `shell` Stow package of this repository (`~/.dotfiles/shell`) loads them for Bash and its interactive Fish launcher; installation paths and generated exports come from the same role defaults. These files configure terminal environments, not GNOME or systemd services. Rust data lives in `~/.local/share/cargo` (`rust_home`) and `~/.local/share/rustup` (`rust_toolchain_home`). Existing `~/.cargo` and `~/.rustup` directories are moved there, with compatibility symlinks retained for old terminals; the role refuses to merge two existing installations. Rust uses `--no-modify-path`, and pnpm's installer runs with an isolated HOME so neither adds configuration to your real startup files. Rerun `user-tools.yml --tags rust,pnpm,go` after changing their settings. Removing a tool does not automatically remove its environment fragment.
+
+
+## Dev Tunnels
+
+Dev Tunnels is managed by `roles/devtunnel` in `dev-tools.yml`:
+
+```sh
+uv run ansible-playbook playbooks/dev-tools.yml --tags devtunnel --ask-become-pass
+```
+
+The role pins the full CLI build version and SHA256 digest of Microsoft's
+version-specific Linux x64 binary. Update both in role defaults deliberately;
+the checksum is independently published in Homebrew's devtunnel cask.
+It does not use the upstream shell installer or change shell startup files.
+
+Binaries live in retained candidate directories under
+`~/.local/opt/devtunnel/releases`. After checksum and runtime version/exit-status
+verification, an atomic `current` symlink switch selects the release.
+Reruns hash the selected binary and repair content or executable-permission
+drift without changing the active release in place. Older releases and verified
+candidates are retained; failed unverified candidates are removed.
+Do not run concurrent installations. Upstream retention of old assets is not
+guaranteed; checksum validation rejects changed downloads.
+
+An Ansible-managed launcher in `~/.local/bin/devtunnel` scopes
+`DOTNET_BUNDLE_EXTRACT_BASE_DIR` to
+`${XDG_CACHE_HOME:-$HOME/.cache}/devtunnel/dotnet`, avoiding `~/.net`.
+Download caching also respects `XDG_CACHE_HOME`.
+The CLI itself stores mutable settings under
+`${XDG_DATA_HOME:-$HOME/.local/share}/DevTunnels`; these are not tracked or migrated.
+Existing `~/bin/devtunnel` installations are left alone; check `command -v devtunnel`
+and remove legacy PATH entries manually if necessary.
+
+Provisioning uses sudo only for prerequisite apt tasks (tagged `packages`).
+Routine reconciliation via `user-tools.yml --tags devtunnel` validates installed
+prerequisites without sudo. Authentication remains
+manual: `devtunnel user login`. Your shared shell loader already supplies
+`~/.local/bin`; no global .NET environment fragment or new Stow package is needed.
+Check mode hashes files but does not download or execute the CLI.
+Runtime verification during installation uses `--version`, which contacts
+Microsoft's tunnel service and can initialize local CLI settings.
+The wrapper also works outside initialized terminal shells; desktop services
+must supply any custom XDG paths explicitly.
+Role-boundary checks are documented in [tests/README.md](tests/README.md).
 
 ## Version policy
 

@@ -16,6 +16,12 @@
   vars:
     manage_system_packages: false
 
+- name: Reconcile isolated modern Neovim without sudo
+  ansible.builtin.import_playbook: neovim-modern.yml
+  vars:
+    manage_system_packages: false
+  tags: [neovim-modern]
+
 - name: Reconcile Nerd Fonts without sudo
   ansible.builtin.import_playbook: nerd-fonts.yml
   vars:

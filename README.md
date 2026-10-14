@@ -21,11 +21,21 @@ parser is needed.
 
 Install tools with the playbooks in `ansible/` (run them from that directory,
 e.g. `cd ~/.dotfiles/ansible && uv run ansible-playbook playbooks/dev-tools.yml`).
-Its Rust, pnpm
-and Go roles generate `~/.config/shell/env.d/*.sh` from their installation
-settings. Do not edit those generated files: change the corresponding Ansible
+Its Rust, pnpm,
+Go and Pulumi roles generate `~/.config/shell/env.d/*.sh` from their installation
+settings. Use `playbooks/user-tools.yml --tags <tool>` for routine pinned user-tool
+updates without sudo; it validates existing system prerequisites instead of
+running apt. Provisioning still uses the original playbooks with sudo.
+Do not edit those generated files: change the corresponding Ansible
 role defaults and rerun the playbook. Rust uses `~/.local/share/cargo` and
 `~/.local/share/rustup`; Go uses its default GOPATH and discovers its GOROOT.
+Pulumi uses `${XDG_DATA_HOME:-$HOME/.local/share}/pulumi` for its binaries and
+runtime home. Its role pins the release and archive checksum, retains release
+bundles behind a `bin` symlink, and repairs missing or changed bundled helpers.
+It migrates an existing `~/.pulumi` without a compatibility symlink and refuses
+to merge two homes.
+Run `dev-tools.yml --tags pulumi` to install or reconcile it. Do not use the default
+`curl | sh` installer: it creates `~/.pulumi` and can edit the Stow-managed Bash config.
 
 The `shell` package provides `~/.config/shell/env.sh`, which loads those
 fragments and adds `~/.local/bin` without duplicating PATH entries. It also
@@ -47,6 +57,12 @@ completion, `~/.bash_aliases`) with the shared environment loader added on top.
 After a distro upgrade, refresh it from `/etc/skel/.bashrc` and keep the loader
 block. Back up and review existing startup files before replacing them.
 
+Dev Tunnels is installed with `dev-tools.yml --tags devtunnel`, using a pinned,
+checksum-verified Microsoft binary and retained releases under `~/.local/opt/devtunnel`.
+Its launcher in `~/.local/bin` keeps .NET extraction in the XDG cache.
+CLI settings and authentication stay local; no upstream installer or shell
+startup edits are needed. See [ansible/README.md](ansible/README.md#dev-tunnels).
+
 ## Other optional Stow packages
 
 ```sh
@@ -63,7 +79,31 @@ unstow it before upgrading (or remove its now-broken symlink). If an old
 `ghostty/config` link exists, remove it before deploying `config.ghostty`.
 
 The `scripts` package is optional. Neovim and Nerd Font installation are now
-provided by Ansible; the older scripts are retained only for reference.
+provided by Ansible.
+
+## Modern Neovim (independent trial config)
+
+Your existing `nvim` config is retained. A second app provides current LSP,
+project-local TypeScript/Effect support, FFF search, syntax editing, completion,
+and contextual feature discovery:
+
+```sh
+bash nvim-modern/setup-tools.sh
+stow --simulate --verbose nvim-modern
+stow nvim-modern
+nvim-modern
+```
+
+The launcher sets `NVIM_APPNAME=nvim-modern`, isolating plugins, Mason tools,
+cache, and state. Plain `nvim` still uses the old config. Use **Space ?** for
+contextual actions, **Space h h** for the guide, and **Space u h** for health.
+See [nvim-modern/README.md](nvim-modern/README.md) for prerequisites, keymaps,
+Effect/Oxlint project setup, updates, tests, and rollback.
+
+The latest upstream runtime is separately pinned in
+`ansible/playbooks/neovim-modern.yml` and installed into
+`~/.local/opt/nvim-modern` without replacing the system Neovim. Its experimental
+HEAD build is optional; the new config also works with Neovim 0.12+.
 
 ## Regional formats (German dates, currency and units, English UI)
 
@@ -83,6 +123,21 @@ In Edge, set Settings > Languages > "Share additional operating system region"
 to the fuller option. That setting lives in the browser profile and is not
 tracked here. Whether Edge reads the `LC_*` variables is untested; the
 fallback is launching it with `--lang=en-DE`.
+
+## T3 Code data directory
+
+T3 Code does not follow XDG and writes everything to `~/.t3`. The `t3code`
+package sets `T3CODE_HOME=~/.local/share/t3` through `~/.config/environment.d/`,
+so the desktop app, the `t3` CLI in GNOME terminals, and `t3 service install`
+(which records the value in its unit) all use it. SSH and TTY logins do not read
+`environment.d`; add the export to `shell/env.sh` if `t3` is needed there.
+
+Stow it, then log out and back in **before** first launching T3 Code, or it
+recreates `~/.t3`:
+
+```sh
+stow --no-folding t3code
+```
 
 ## Shared agent skills
 
