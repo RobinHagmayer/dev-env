@@ -63,6 +63,18 @@ Its launcher in `~/.local/bin` keeps .NET extraction in the XDG cache.
 CLI settings and authentication stay local; no upstream installer or shell
 startup edits are needed. See [ansible/README.md](ansible/README.md#dev-tunnels).
 
+Google Cloud CLI is managed from Google's official Debian/Ubuntu apt repository
+with a version pin and package hold:
+
+```sh
+(cd ansible && uv run ansible-playbook playbooks/dev-tools.yml --tags gcloud --ask-become-pass)
+gcloud init
+```
+
+Sudo-free `user-tools.yml --tags gcloud` only validates the installed pin and
+hold; updates require provisioning with sudo. Credentials remain local.
+See [ansible/README.md](ansible/README.md#google-cloud-cli).
+
 ## Other optional Stow packages
 
 ```sh

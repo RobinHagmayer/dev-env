@@ -232,6 +232,50 @@ Role-boundary regression checks are documented in [tests/README.md](tests/README
 Rust, pnpm and Go also generate POSIX environment fragments in `~/.config/shell/env.d`. The `shell` Stow package of this repository (`~/.dotfiles/shell`) loads them for Bash and its interactive Fish launcher; installation paths and generated exports come from the same role defaults. These files configure terminal environments, not GNOME or systemd services. Rust data lives in `~/.local/share/cargo` (`rust_home`) and `~/.local/share/rustup` (`rust_toolchain_home`). Existing `~/.cargo` and `~/.rustup` directories are moved there, with compatibility symlinks retained for old terminals; the role refuses to merge two existing installations. Rust uses `--no-modify-path`, and pnpm's installer runs with an isolated HOME so neither adds configuration to your real startup files. Rerun `user-tools.yml --tags rust,pnpm,go` after changing their settings. Removing a tool does not automatically remove its environment fragment.
 
 
+## Google Cloud CLI
+
+Install from [Google's official Debian/Ubuntu repository](https://docs.cloud.google.com/sdk/docs/install-sdk#deb):
+
+```sh
+uv run ansible-playbook playbooks/dev-tools.yml --tags gcloud --ask-become-pass
+# Equivalent standalone entry point:
+uv run ansible-playbook playbooks/gcloud.yml --ask-become-pass
+# Validate an existing installation without sudo:
+uv run ansible-playbook playbooks/user-tools.yml --tags gcloud
+```
+
+The `gcloud` role pins `google-cloud-cli` to `589.0.0-0` and holds the package
+against apt/unattended upgrades. Change `gcloud_version` in
+`roles/gcloud/defaults/main.yml`, then rerun provisioning to upgrade or downgrade.
+An unavailable pin fails rather than falling back to latest. Google retains
+packages published within the last 365 days; an already-installed matching pin
+does not need to be resolved/downloaded again.
+
+The ASCII-armored repository key is SHA256-verified and scoped with
+`Signed-By` to `/etc/apt/keyrings/google-cloud.asc`; apt reads this format
+directly, so no `apt-key` or dearmoring command is needed. The checksum was
+recorded from Google's official HTTPS endpoint, not an independently published
+digest; review and update it deliberately on key rotation. Repository setup,
+package installation and holds require sudo and are tagged `packages`.
+Sudo-free mode validates prerequisites, the exact installed package version
+and its hold, without refreshing apt or editing repositories.
+Check mode does not write the key or repository; on an unprovisioned machine,
+apt may therefore fail to resolve the pin until the repository has been installed.
+
+The package supplies `gcloud`, alpha/beta commands, `bq` and `gsutil`.
+Optional components (such as the GKE auth plugin, emulators and `kubectl`)
+are not installed; use their separate apt packages, not
+`gcloud components install/update`. No shell startup files or login settings
+are modified; executables are on the standard system PATH.
+Existing installations from Snap, archives or other locations are not migrated;
+check `command -v gcloud` for shadowing. Resolve any pre-existing duplicate
+Google apt repository entries before provisioning.
+
+Authentication/project selection is manual: run `gcloud init` after installation.
+CLI configuration and credentials stay local in the upstream default
+`~/.config/gcloud` (or your existing `CLOUDSDK_CONFIG`); this role never reads,
+tracks or changes them.
+
 ## Dev Tunnels
 
 Podman is managed by `roles/podman` in `dev-tools.yml` (`--tags podman`):
