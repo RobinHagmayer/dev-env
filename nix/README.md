@@ -38,6 +38,19 @@ nix --extra-experimental-features 'nix-command flakes' develop path:.
 Test the tools, then commit the changed `flake.lock`. Update Nix-managed tools
 through Nix, not their built-in updaters.
 
+## Ghostty GUI trial
+
+```sh
+cd ~/.dotfiles/nix
+nix --extra-experimental-features 'nix-command flakes' run path:.#ghostty
+```
+
+Opens a separate Ghostty 1.3.1 window using your existing config. Your usual
+terminal and desktop launcher stay unchanged. Close the window to stop it.
+
+Uses `nix-gl-host` for this machine's NVIDIA drivers. AMD/Intel-only machines
+need a different graphics wrapper. This uses Nixpkgs, not Ghostty's development flake.
+
 ## New machine
 
 [Install Nix](https://nix.dev/install-nix.html), open a new terminal, then follow
