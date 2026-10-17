@@ -63,6 +63,14 @@ Its launcher in `~/.local/bin` keeps .NET extraction in the XDG cache.
 CLI settings and authentication stay local; no upstream installer or shell
 startup edits are needed. See [ansible/README.md](ansible/README.md#dev-tunnels).
 
+## Optional Nix package-manager trial
+
+See [nix/README.md](nix/README.md) for a temporary, explicitly declared CLI
+trial on Ubuntu. `nix/` is a standalone
+flake, **not a Stow package**. It does not replace the existing Ansible installers
+or Stow-managed configuration. The trial has a pinned lockfile and has been
+validated on this workstation; follow that guide to enter the environment.
+
 ## Other optional Stow packages
 
 ```sh
