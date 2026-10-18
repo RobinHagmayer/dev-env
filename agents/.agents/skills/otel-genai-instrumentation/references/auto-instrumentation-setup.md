@@ -5,7 +5,8 @@ providers. For all other languages, use manual instrumentation.
 
 ## Prerequisites
 
-1. Base OTel SDK configured and sending to your observability backend (see **otel-instrumentation** skill)
+1. Base OTel SDK configured and sending to your observability backend (see
+   **otel-instrumentation** skill)
 2. Opt into GenAI semantic conventions:
 ```bash
 export OTEL_SEMCONV_STABILITY_OPT_IN=gen_ai_latest_experimental

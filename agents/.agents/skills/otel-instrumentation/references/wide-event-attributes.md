@@ -24,8 +24,9 @@ Connect services to their owners and understand which team is responsible.
 **Why it matters:** During an incident, the first question is often "who owns this?" These
 attributes let you answer that from your telemetry without switching to a service catalog.
 
-**Example question — how many services does each team run?** Count the distinct `service.name`
-values where `service.environment = "production"`, grouped by `service.team`.
+**Example question — how many services does each team run?** Count the distinct
+`service.name` values where `service.environment = "production"`, grouped by
+`service.team`.
 
 ## Infrastructure
 
@@ -41,7 +42,9 @@ Understand the physical or virtual resources backing each service instance.
 **Why it matters:** Correlating performance with instance resources answers questions like
 "is this service under-provisioned?" or "are the larger instances actually faster?"
 
-**Example question — which services use the most memory?** Take the max of `instance.memory_mb` grouped by `service.name` and `instance.type`, sorted descending, top 10.
+**Example question — which services use the most memory?** Take the max of
+`instance.memory_mb` grouped by `service.name` and `instance.type`, sorted descending, top
+10.
 
 ## Orchestration
 
@@ -56,10 +59,12 @@ Capture container and cluster context so you can correlate issues with infrastru
 | `cloud.availability_zone` | `us-east-1c` | AZ where the service runs |
 | `cloud.region` | `us-east-1` | Region where the service runs |
 
-**Why it matters:** Infrastructure issues often manifest per-AZ or per-node. These attributes
-let you surface "all slow requests are from `us-east-1c`" by comparing outlier and baseline attribute distributions.
+**Why it matters:** Infrastructure issues often manifest per-AZ or per-node. These
+attributes let you surface "all slow requests are from `us-east-1c`" by comparing outlier
+and baseline attribute distributions.
 
-**Example question — request distribution across AZs:** Count requests where `service.name = "api-service"`, grouped by `cloud.availability_zone`.
+**Example question — request distribution across AZs:** Count requests where
+`service.name = "api-service"`, grouped by `cloud.availability_zone`.
 
 ## Build and Deploy
 
@@ -77,9 +82,13 @@ Answer "what changed?" during incidents without leaving your observability tool.
 questions. With `deployment.age_minutes < 20` you can instantly find recent deploys, and
 with `service.version` you can compare error rates between versions.
 
-**Example question — what was recently deployed?** For spans where `service.build.deployment.age_minutes < 20`, take the min age grouped by `service.name`, sorted ascending, top 10.
+**Example question — what was recently deployed?** For spans where
+`service.build.deployment.age_minutes < 20`, take the min age grouped by `service.name`,
+sorted ascending, top 10.
 
-**Example question — 500s correlated with deploy versions:** Count requests where `service.name = "api-service"`, grouped by `http.response.status_code` and `service.version`.
+**Example question — 500s correlated with deploy versions:** Count requests where
+`service.name = "api-service"`, grouped by `http.response.status_code` and
+`service.version`.
 
 ## Feature Flags
 
@@ -91,11 +100,14 @@ Correlate issues with feature rollouts by tracking which flags are active per-re
 
 Use one attribute per flag (e.g., `feature_flag.auth_v2`, `feature_flag.new_checkout_flow`).
 
-**Why it matters:** Feature flags are a developer superpower for testing in production, but
-only if you can compare performance between flag states. Comparing outlier and baseline attribute distributions can instantly show that
-errors correlate with `feature_flag.auth_v2 = true`.
+**Why it matters:** Feature flags are a developer superpower for testing in production,
+but only if you can compare performance between flag states. Comparing outlier and
+baseline attribute distributions can instantly show that errors correlate with
+`feature_flag.auth_v2 = true`.
 
-**Example question — errors by feature flag state:** Count requests where `service.name = "api-service"` and `error = true`, grouped by `feature_flag.auth_v2` and `exception.slug`.
+**Example question — errors by feature flag state:** Count requests where
+`service.name = "api-service"` and `error = true`, grouped by `feature_flag.auth_v2` and
+`exception.slug`.
 
 ## Runtime Versions
 
@@ -110,7 +122,8 @@ Track versions of languages, frameworks, and datastores to correlate issues with
 **Why it matters:** "Didn't we upgrade Go versions recently? Does that correlate with the
 memory increase?" You can't answer this without version attributes.
 
-**Example question — memory usage by Go version:** Show the distribution of `metrics.memory_mb` where `service.name = "api-service"`, grouped by `go.version`.
+**Example question — memory usage by Go version:** Show the distribution of
+`metrics.memory_mb` where `service.name = "api-service"`, grouped by `go.version`.
 
 ## HTTP Information (Beyond Auto-Instrumentation)
 
@@ -130,7 +143,8 @@ deeper analysis.
 With it, you see "only `POST /checkout` and `POST /signup` are slow." Parsed user-agent
 fields let you find client-specific issues without regex.
 
-**Example question — P99 latency by route:** Compute the 99th percentile of `duration_ms` where `service.name = "api-service"`, grouped by `http.route`.
+**Example question — P99 latency by route:** Compute the 99th percentile of `duration_ms`
+where `service.name = "api-service"`, grouped by `http.route`.
 
 ## Timing Breakdowns
 
@@ -148,7 +162,9 @@ was slow because authentication took 10 seconds." See the
 [Timing Attributes pattern](custom-instrumentation.md)
 for implementation guidance.
 
-**Example question — payload parse P99 by user type and region:** Compute the 99th percentile of `payload_parse.duration_ms` where `service.name = "api-service"`, grouped by `user.type` and `cloud.region`.
+**Example question — payload parse P99 by user type and region:** Compute the 99th
+percentile of `payload_parse.duration_ms` where `service.name = "api-service"`, grouped by
+`user.type` and `cloud.region`.
 
 ## Async Request Summaries
 
@@ -169,7 +185,9 @@ unless you manually count child spans per trace. See the
 [Async Request Summaries pattern](custom-instrumentation.md)
 for implementation guidance.
 
-**Example question — database queries per request (a distribution reveals outliers):** Show the distribution of `stats.postgres_query_count` where `service.name = "api-service"`.
+**Example question — database queries per request (a distribution reveals outliers):**
+Show the distribution of `stats.postgres_query_count` where
+`service.name = "api-service"`.
 
 ## Error Details
 
@@ -190,9 +208,12 @@ failed request *without* a slug reveals gaps in your error handling. See the
 [Exception Slugs pattern](custom-instrumentation.md)
 for implementation guidance.
 
-**Example question — which enterprise users hit the most errors?** Count the distinct `user.id` values where `service.name = "api-service"` and `user.type = "enterprise"`, grouped by `exception.slug`.
+**Example question — which enterprise users hit the most errors?** Count the distinct
+`user.id` values where `service.name = "api-service"` and `user.type = "enterprise"`,
+grouped by `exception.slug`.
 
-**Example question — find requests with unhandled errors (missing slugs):** Count requests where `error = true` and `exception.slug` is missing, grouped by `http.route`.
+**Example question — find requests with unhandled errors (missing slugs):** Count requests
+where `error = true` and `exception.slug` is missing, grouped by `http.route`.
 
 ## User and Business Context
 
@@ -208,12 +229,13 @@ can automatically understand your user model.
 | `user.org.id` | `278`, `enterprise-name` | Organization for enterprise accounts |
 | `user.age_days` | `0`, `637` | Account age — distinguishes new vs established users |
 
-**Why it matters:** A single enterprise account can represent 10%+ of revenue. Without user
-attributes, you can't distinguish "weird edge case" from "revenue-critical path breaking
-for high-value customers." Comparing outlier and baseline attribute distributions can instantly surface that all slow
-requests are from one tenant.
+**Why it matters:** A single enterprise account can represent 10%+ of revenue. Without
+user attributes, you can't distinguish "weird edge case" from "revenue-critical path
+breaking for high-value customers." Comparing outlier and baseline attribute distributions
+can instantly surface that all slow requests are from one tenant.
 
-**Example question — P99 latency by user type:** Compute the 99th percentile of `duration_ms` where `service.name = "api-service"`, grouped by `user.type`.
+**Example question — P99 latency by user type:** Compute the 99th percentile of
+`duration_ms` where `service.name = "api-service"`, grouped by `user.type`.
 
 ## Rate Limits
 
@@ -229,7 +251,9 @@ Track rate-limiting state so you can quickly identify affected users and diagnos
 these attributes, finding rate-limited users requires digging through logs or separate
 systems.
 
-**Example question — users approaching their rate limit:** Take the max of `ratelimit.used` where `ratelimit.remaining < 1000`, grouped by `user.id` and `ratelimit.limit`.
+**Example question — users approaching their rate limit:** Take the max of
+`ratelimit.used` where `ratelimit.remaining < 1000`, grouped by `user.id` and
+`ratelimit.limit`.
 
 ## Caching
 
@@ -243,10 +267,13 @@ Record cache hit/miss booleans for every code path that could shortcut with a ca
 Use one boolean attribute per cacheable operation (e.g., `cache.user_profile`,
 `cache.product_catalog`).
 
-**Why it matters:** Cache misses are a common cause of latency spikes. Comparing outlier and baseline attribute distributions can surface
-"slow requests all have `cache.session_info = false`" without you having to guess.
+**Why it matters:** Cache misses are a common cause of latency spikes. Comparing outlier
+and baseline attribute distributions can surface "slow requests all have
+`cache.session_info = false`" without you having to guess.
 
-**Example question — latency difference between cache hit and miss:** Compute the 99th percentile of `duration_ms` where `service.name = "api-service"`, grouped by `cache.session_info`.
+**Example question — latency difference between cache hit and miss:** Compute the 99th
+percentile of `duration_ms` where `service.name = "api-service"`, grouped by
+`cache.session_info`.
 
 ## Localization
 
@@ -262,7 +289,8 @@ direction and currency formatting.
 **Why it matters:** Bugs that only reproduce with RTL text or specific currencies are notoriously
 hard to find. These attributes let you filter and group by localization settings instantly.
 
-**Example question — errors by text direction:** Count requests where `error = true`, grouped by `localization.language_dir`.
+**Example question — errors by text direction:** Count requests where `error = true`,
+grouped by `localization.language_dir`.
 
 ## Operational Metrics
 
@@ -278,6 +306,8 @@ performance in a single query.
 | `metrics.gc_pause_time_ms` | `14`, `325` | Time spent in GC (cumulative or delta) |
 
 **Why it matters:** "Are slow requests correlated with high memory or GC pauses?" These
-attributes turn that from a multi-tool investigation into a single query comparing outlier and baseline requests.
+attributes turn that from a multi-tool investigation into a single query comparing outlier
+and baseline requests.
 
-**Example question — memory and CPU load for a service:** Show the distributions of `metrics.memory_mb` and `metrics.cpu_load` where `service.name = "api-service"`.
+**Example question — memory and CPU load for a service:** Show the distributions of
+`metrics.memory_mb` and `metrics.cpu_load` where `service.name = "api-service"`.

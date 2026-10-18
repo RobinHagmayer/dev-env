@@ -131,7 +131,8 @@ When in doubt, prefer **attributes on existing spans** over creating new child s
 #### Timing Attributes (measure sub-operations without child spans)
 
 Record important sub-operation durations as attributes on the parent span. These are
-easier to query than child spans and can be compared directly across outlier and baseline requests.
+easier to query than child spans and can be compared directly across outlier and baseline
+requests.
 
 ```go
 // Go: time auth and record on the existing span
@@ -178,10 +179,11 @@ For extended examples, see
 
 #### Optional compatibility: promote exception fields with a LogRecordProcessor
 
-If existing span-level dashboards, alerts, or queries depend on exception fields being present
-on the span itself (as produced by span-event exception recording), add a custom **LogRecordProcessor** before the batch/export processor. When it
-sees an exception log, it should use the log record's resolved context to find the active recording
-span and promote a configured, minimal set of fields such as `error=true`, `error.type`,
+If existing span-level dashboards, alerts, or queries depend on exception fields being
+present on the span itself (as produced by span-event exception recording), add a custom
+**LogRecordProcessor** before the batch/export processor. When it sees an exception log,
+it should use the log record's resolved context to find the active recording span and
+promote a configured, minimal set of fields such as `error=true`, `error.type`,
 `exception.type`, `exception.slug`, or an error category.
 
 Do not recommend a standalone `SpanProcessor` for this: span processors receive span lifecycle
@@ -323,17 +325,27 @@ trace context as spans.
 ## Additional Resources
 
 ### Reference Files
-- **`references/sdk-setup-by-language.md`** — OTLP configuration and SDK setup for Go, Python, Node.js, Java, Ruby, .NET, Rust
-- **`references/local-collector-debug-test.md`** — Run a local OTel Collector via Docker to verify spans, logs, and metrics locally; includes `jq` commands for inspecting NDJSON output
-- **`references/custom-instrumentation.md`** — Custom instrumentation patterns with full code examples (timing attributes, exception slugs, async request summaries)
-- **`references/collector-config.md`** — OTel Collector configuration for format conversion, processing, and sampling
-- **`references/wide-event-attributes.md`** — Canonical attribute catalog organized by category with example queries
-- **`references/architectural-patterns.md`** — Trace design patterns for streaming, async, ETL, and serverless architectures
-- **`references/lambda.md`** — AWS Lambda: OTel Layer vs manual SDK setup trade-offs, forceFlush and per-request latency, SDK 2.x setup, cross-Lambda trace propagation, header normalisation, TOKEN vs REQUEST authorizer migration
+- **`references/sdk-setup-by-language.md`** — OTLP configuration and SDK setup for Go,
+  Python, Node.js, Java, Ruby, .NET, Rust
+- **`references/local-collector-debug-test.md`** — Run a local OTel Collector via Docker
+  to verify spans, logs, and metrics locally; includes `jq` commands for inspecting NDJSON
+  output
+- **`references/custom-instrumentation.md`** — Custom instrumentation patterns with full
+  code examples (timing attributes, exception slugs, async request summaries)
+- **`references/collector-config.md`** — OTel Collector configuration for format
+  conversion, processing, and sampling
+- **`references/wide-event-attributes.md`** — Canonical attribute catalog organized by
+  category with example queries
+- **`references/architectural-patterns.md`** — Trace design patterns for streaming, async,
+  ETL, and serverless architectures
+- **`references/lambda.md`** — AWS Lambda: OTel Layer vs manual SDK setup trade-offs,
+  forceFlush and per-request latency, SDK 2.x setup, cross-Lambda trace propagation,
+  header normalisation, TOKEN vs REQUEST authorizer migration
 
 ### Cross-References
 - For conceptual foundations of why wide events and attributes matter: **observability-fundamentals** skill
 - After instrumenting, verify that data is arriving in your observability backend
 
 ## Attribution
-Adapted from the Honeycomb agent skill of the same name; vendor-specific parts removed because we don't use Honeycomb. See `NOTICE.md` for details and license.
+Adapted from the Honeycomb agent skill of the same name; vendor-specific parts removed
+because we don't use Honeycomb. See `NOTICE.md` for details and license.

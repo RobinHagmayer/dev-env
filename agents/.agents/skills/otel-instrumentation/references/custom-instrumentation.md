@@ -147,9 +147,9 @@ requires an installed context manager and an explicit active context; Java attac
 ### Optional compatibility pattern: exception-promoting LogRecordProcessor
 
 Span-event exception recording (`record_exception`) puts exception fields on the span. A
-trace-correlated Logs API exception does not receive that promotion automatically. If an existing
-span-oriented dashboard, alert, or query surface must be preserved, implement a custom **LogRecordProcessor**, registered
-before the batch/export processor:
+trace-correlated Logs API exception does not receive that promotion automatically. If an
+existing span-oriented dashboard, alert, or query surface must be preserved, implement a
+custom **LogRecordProcessor**, registered before the batch/export processor:
 
 ```text
 on_emit(log_record, resolved_context):

@@ -288,10 +288,10 @@ When a stream fails partway through:
 3. Record partial usage if available
 4. End the span — don't leave it hanging
 
-The correlated log appears in your observability backend as a `span_event` annotation with trace context, but its
-full exception fields remain on the log event rather than being hoisted onto the streaming span.
-For legacy SDKs without a usable Logs API, retain `span.add_event`/`record_exception` as a
-compatibility path.
+The correlated log appears in your observability backend as a `span_event` annotation with
+trace context, but its full exception fields remain on the log event rather than being
+hoisted onto the streaming span. For legacy SDKs without a usable Logs API, retain
+`span.add_event`/`record_exception` as a compatibility path.
 
 ```python
 # Python: mid-stream error handling

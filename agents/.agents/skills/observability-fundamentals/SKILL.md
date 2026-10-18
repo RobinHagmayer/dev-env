@@ -51,9 +51,9 @@ and `cache.hit` to the same span lets you correlate them in a single query — "
 requests are from tenant X on version 2.3.1 with cache misses." Separate metrics can't
 do this because each dimension combination creates a new time series.
 
-An observability backend built for wide events handles high cardinality and
-dimensionality without the cost explosion that affects metrics systems. Adding a high-cardinality field like
-`user.id` doesn't create millions of time series — it's another column on each event,
+An observability backend built for wide events handles high cardinality and dimensionality
+without the cost explosion that affects metrics systems. Adding a high-cardinality field
+like `user.id` doesn't create millions of time series — it's another column on each event,
 aggregated at query time.
 
 ## Events vs Metrics vs Logs
@@ -75,10 +75,12 @@ For code examples showing the same operation instrumented three ways, see
 
 ## The Core Analysis Loop
 
-Debugging in an observability backend follows a loop: **Define → Visualize → Investigate → Evaluate**.
+Debugging in an observability backend follows a loop: **Define → Visualize → Investigate →
+Evaluate**.
 
 1. **Define** — Frame the question. Start from an alert, SLO budget burn, or user report.
-2. **Visualize** — Run a query to see the shape of the problem (latency distribution, count, P99).
+2. **Visualize** — Run a query to see the shape of the problem (latency distribution,
+   count, P99).
 3. **Investigate** — Narrow down with an outlier-vs-baseline comparison of attribute
    distributions across all dimensions (where your backend supports it) and trace analysis.
 4. **Evaluate** — Confirm the hypothesis by querying with and without the suspected cause.
@@ -89,8 +91,8 @@ have enough dimensions to diff on.
 
 ## Instrumentation Connects to Investigation
 
-Every attribute on a span is a dimension an outlier-vs-baseline comparison can use to find root causes. The
-attributes that matter most during incidents answer three questions:
+Every attribute on a span is a dimension an outlier-vs-baseline comparison can use to find
+root causes. The attributes that matter most during incidents answer three questions:
 
 - **Who is affected?** — user, tenant, account tier, region
 - **What changed?** — deployment version, feature flag, config version
@@ -114,10 +116,12 @@ follow-ups.
 ## Additional Resources
 
 ### Reference Files
-- **`references/events-vs-metrics-vs-logs.md`** — Code examples: same operation as event, metric, and log
+- **`references/events-vs-metrics-vs-logs.md`** — Code examples: same operation as event,
+  metric, and log
 
 ### Cross-References
 - For SDK setup and custom instrumentation: **otel-instrumentation** skill
 
 ## Attribution
-Adapted from the Honeycomb agent skill of the same name; vendor-specific parts removed because we don't use Honeycomb. See `NOTICE.md` for details and license.
+Adapted from the Honeycomb agent skill of the same name; vendor-specific parts removed
+because we don't use Honeycomb. See `NOTICE.md` for details and license.

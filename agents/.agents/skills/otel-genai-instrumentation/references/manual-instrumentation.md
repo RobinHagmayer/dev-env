@@ -796,9 +796,10 @@ The general pattern for all GenAI spans:
 - For new diagnostic exception events, emit a Logs API record while the span is active with
   `event.name="exception"`, ERROR severity, and `exception.type`/`exception.message`/
   `exception.stacktrace` (plus `exception.escaped` when applicable)
-- Logs API exception fields live on the correlated log record, not the containing span. When
-  investigating, query the log records with `event.name=exception`, take a sampled trace ID, and
-  inspect the surrounding trace; do not search only parent spans for `exception.*`
+- Logs API exception fields live on the correlated log record, not the containing span.
+  When investigating, query the log records with `event.name=exception`, take a sampled
+  trace ID, and inspect the surrounding trace; do not search only parent spans for
+  `exception.*`
 - Keep `span.record_exception(e)` / `span.RecordError(err)` for compatibility with existing
   SDKs and instrumentation where a usable Logs API is unavailable
 - Let exceptions propagate — don't swallow errors silently

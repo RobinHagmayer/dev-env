@@ -94,13 +94,18 @@ async function handleCheckout(req, res) {
 From this single event, at any time in the future, without changing code:
 
 - P99 of `duration_ms`, grouped by `tenant.name` — which tenant is slow?
-- Count where `checkout.success = false`, grouped by `error.type` — what errors are failing checkouts?
-- Distribution of `duration_ms` filtered to `user.id = "abc123"` — what's this user's experience?
-- Average `cart.total` where `checkout.success = true`, grouped by `plan.tier` — revenue by tier
-- Count grouped by `deployment.version` and `checkout.success` — did the new deploy break checkouts?
-- **Outlier-vs-baseline comparison** (where your backend supports it): select the slow region → the backend
-  compares attribute distributions and finds that `deployment.version=2.3.1`
-  AND `feature.new_checkout_flow=true` AND `tenant.name=acme` are overrepresented in slow requests
+- Count where `checkout.success = false`, grouped by `error.type` — what errors are
+  failing checkouts?
+- Distribution of `duration_ms` filtered to `user.id = "abc123"` — what's this user's
+  experience?
+- Average `cart.total` where `checkout.success = true`, grouped by `plan.tier` — revenue
+  by tier
+- Count grouped by `deployment.version` and `checkout.success` — did the new deploy break
+  checkouts?
+- **Outlier-vs-baseline comparison** (where your backend supports it): select the slow
+  region → the backend compares attribute distributions and finds that
+  `deployment.version=2.3.1` AND `feature.new_checkout_flow=true` AND `tenant.name=acme`
+  are overrepresented in slow requests
 
 ## As Metrics
 

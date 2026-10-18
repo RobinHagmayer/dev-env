@@ -23,9 +23,10 @@ the **observability-fundamentals** skill.
 
 **BEFORE implementing GenAI instrumentation, ensure your base OpenTelemetry configuration is complete.**
 
-Use the **otel-instrumentation** skill to configure all standard OTEL environment variables
-(OTEL_SERVICE_NAME, OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_EXPORTER_OTLP_HEADERS, OTEL_EXPORTER_OTLP_PROTOCOL,
-signal-specific endpoints, etc.) and verify basic spans are flowing to your observability backend.
+Use the **otel-instrumentation** skill to configure all standard OTEL environment
+variables (OTEL_SERVICE_NAME, OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_EXPORTER_OTLP_HEADERS,
+OTEL_EXPORTER_OTLP_PROTOCOL, signal-specific endpoints, etc.) and verify basic spans are
+flowing to your observability backend.
 
 GenAI instrumentation adds GenAI-specific configuration on top of that base setup.
 
@@ -76,7 +77,8 @@ silent-rejection pitfall), see the **otel-instrumentation** skill.
 
 ## Prerequisites
 
-**This skill assumes your agent application is already sending telemetry to your observability backend.** You should have:
+**This skill assumes your agent application is already sending telemetry to your
+observability backend.** You should have:
 - OpenTelemetry SDK installed and initialized
 - All standard OTEL environment variables configured (see **Base OTEL Setup** section above)
 - OTLP exporter configured with the endpoint and auth headers your backend requires
@@ -249,7 +251,8 @@ not `"mypackage.DoSomething"`.
 **CRITICAL: Every GenAI span MUST include these two attributes. This is non-negotiable.**
 
 1. **`gen_ai.operation.name`** — Identifies the operation type (`chat`, `embeddings`, `execute_tool`, `invoke_agent`, etc.).
-   - **Without this**: The span is not recognized as a GenAI operation and will be excluded from GenAI-specific queries and visualizations in your observability backend
+   - **Without this**: The span is not recognized as a GenAI operation and will be
+     excluded from GenAI-specific queries and visualizations in your observability backend
    - **Set on EVERY span**: chat, execute_tool, invoke_agent, embeddings, retrieval, etc.
 
 2. **`gen_ai.conversation.id`** — Ties operations together within a conversation or session.
@@ -615,7 +618,8 @@ Use cases: RAG relevance scoring, hallucination detection, output quality gates.
 | `mcp.client.operation.duration` | Histogram | s | MCP client latency |
 | `mcp.server.operation.duration` | Histogram | s | MCP server latency |
 
-For OTLP metrics export configuration (endpoint and headers), see the **otel-instrumentation** skill.
+For OTLP metrics export configuration (endpoint and headers), see the
+**otel-instrumentation** skill.
 
 ## MCP Instrumentation
 
@@ -649,18 +653,27 @@ For context propagation details, well-known method names, and code examples, see
 ## Additional Resources
 
 ### Reference Files
-- **`references/auto-instrumentation-setup.md`** — Python + Node.js: per-provider install, upstream README links, supported versions
-- **`references/manual-instrumentation.md`** — Code examples in Python/Node.js/Go for all span types
-- **`references/genai-attributes-catalog.md`** — Upstream semconv links + message JSON schema gotchas
-- **`references/agent-and-tool-patterns.md`** — Trace diagrams: tool-calling loop, multi-turn, nested agents, workflow
-- **`references/mcp-instrumentation.md`** — MCP context propagation, span conventions, method names, metrics
-- **`references/streaming-instrumentation.md`** — Streaming span lifecycle, TTFT/TTFC metrics, mid-stream errors, code examples
-- **`references/content-capture-setup.md`** — Env var + manual setup, message JSON schemas, privacy controls
+- **`references/auto-instrumentation-setup.md`** — Python + Node.js: per-provider install,
+  upstream README links, supported versions
+- **`references/manual-instrumentation.md`** — Code examples in Python/Node.js/Go for all
+  span types
+- **`references/genai-attributes-catalog.md`** — Upstream semconv links + message JSON
+  schema gotchas
+- **`references/agent-and-tool-patterns.md`** — Trace diagrams: tool-calling loop,
+  multi-turn, nested agents, workflow
+- **`references/mcp-instrumentation.md`** — MCP context propagation, span conventions,
+  method names, metrics
+- **`references/streaming-instrumentation.md`** — Streaming span lifecycle, TTFT/TTFC
+  metrics, mid-stream errors, code examples
+- **`references/content-capture-setup.md`** — Env var + manual setup, message JSON
+  schemas, privacy controls
 
 ### Cross-References
 - **BEFORE using this skill**: Use **otel-instrumentation** for base SDK setup, all OTEL environment variables (OTEL_SERVICE_NAME, OTEL_EXPORTER_OTLP_*, OTEL_EXPORTER_OTLP_HEADERS, etc.), OTLP config, collector, and sampling
 - For conceptual foundations of wide events and high cardinality: **observability-fundamentals** skill
-- After instrumenting, verify in your observability backend that GenAI spans and attributes are arriving as expected
+- After instrumenting, verify in your observability backend that GenAI spans and
+  attributes are arriving as expected
 
 ## Attribution
-Adapted from the Honeycomb agent skill of the same name; vendor-specific parts removed because we don't use Honeycomb. See `NOTICE.md` for details and license.
+Adapted from the Honeycomb agent skill of the same name; vendor-specific parts removed
+because we don't use Honeycomb. See `NOTICE.md` for details and license.

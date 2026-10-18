@@ -211,7 +211,8 @@ invoke_agent orchestrator             (CLIENT, root, conversation.id=abc-123)
 - [ ] `propagation.extract()` + `context.with()` wraps handler on the receiving side
 - [ ] `conversation.id` extracted from payload and passed to all operations (server-side)
 - [ ] `W3CTraceContextPropagator` registered (NodeSDK does this by default)
-- [ ] Verify in your observability backend: sub-agent spans nest under orchestrator's trace with same conversation.id
+- [ ] Verify in your observability backend: sub-agent spans nest under orchestrator's
+  trace with same conversation.id
 
 ## Workflow Pattern
 

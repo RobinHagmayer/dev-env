@@ -43,7 +43,8 @@ A common mistake: the app has an API key in `.env` but never sets
 `OTEL_EXPORTER_OTLP_HEADERS`. The OTel SDK does NOT automatically read
 vendor-specific API key variables — you must either:
 
-1. Set `OTEL_EXPORTER_OTLP_HEADERS="<auth headers required by your backend>"` explicitly, **or**
+1. Set `OTEL_EXPORTER_OTLP_HEADERS="<auth headers required by your backend>"` explicitly,
+   **or**
 2. Pass headers programmatically when constructing exporters:
    ```typescript
    const headers = { "<header-name>": process.env.YOUR_BACKEND_API_KEY };

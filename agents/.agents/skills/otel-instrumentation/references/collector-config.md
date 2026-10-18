@@ -1,7 +1,8 @@
 # OpenTelemetry Collector Configuration
 
-The OTel Collector receives, processes, and exports telemetry data. Use it between
-your application and your observability backend for format conversion, processing, sampling, and routing.
+The OTel Collector receives, processes, and exports telemetry data. Use it between your
+application and your observability backend for format conversion, processing, sampling,
+and routing.
 
 ## When to Use a Collector
 

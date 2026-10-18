@@ -99,7 +99,8 @@ Add spans to business logic operations that auto-instrumentation doesn't cover. 
 
 1. **Start with I/O boundaries** — database calls, external HTTP calls, cache operations
 2. **Then add business logic** — operations that explain *why* time is spent
-3. **Add attributes liberally** — every piece of context makes it easier to slice and compare data during investigations
+3. **Add attributes liberally** — every piece of context makes it easier to slice and
+   compare data during investigations
 4. **Record outcomes on spans** — result status, error count, duration as attributes
 
 For attribute naming and span creation patterns, consult
@@ -160,4 +161,5 @@ For reference, a real migration of Gatus (~30k LOC Go, Fiber v2, SQLite/Postgres
   missing `span.End()` calls, goroutine context reuse
 
 ## Attribution
-Adapted from the Honeycomb agent skill of the same name; vendor-specific parts removed because we don't use Honeycomb. See `NOTICE.md` for details and license.
+Adapted from the Honeycomb agent skill of the same name; vendor-specific parts removed
+because we don't use Honeycomb. See `NOTICE.md` for details and license.

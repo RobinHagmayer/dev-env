@@ -1,11 +1,12 @@
 # Verification Checklist
 
-After completing each migration phase, verify that instrumentation is correct and complete.
-Silent failures are the norm in OTel migration — code compiles and runs correctly, but traces
-are disconnected, attributes are missing, or telemetry is dropped. Always verify with your
-tracing backend. If you do not have a backend set up yet or want to verify locally before
-sending data upstream, run a local OTel Collector and inspect its debug output and NDJSON log
-file — see the local collector debug/test reference in the **otel-instrumentation** skill for setup and `jq` inspection commands.
+After completing each migration phase, verify that instrumentation is correct and
+complete. Silent failures are the norm in OTel migration — code compiles and runs
+correctly, but traces are disconnected, attributes are missing, or telemetry is dropped.
+Always verify with your tracing backend. If you do not have a backend set up yet or want
+to verify locally before sending data upstream, run a local OTel Collector and inspect its
+debug output and NDJSON log file — see the local collector debug/test reference in the
+**otel-instrumentation** skill for setup and `jq` inspection commands.
 
 ## 1. Traces Exist and Are Connected
 
@@ -89,8 +90,8 @@ If using a logging bridge:
 - Verify you can navigate from a log event to its parent trace
 - Check that log severity levels map correctly (e.g., `slog.Error` → `SEVERITY_NUMBER >= 17`)
 
-**Example question:** For `service.name = "your-service"`, how many log records have a trace ID,
-grouped by severity (`SeverityText`)?
+**Example question:** For `service.name = "your-service"`, how many log records have a
+trace ID, grouped by severity (`SeverityText`)?
 
 If the trace ID is missing from logs, the logging bridge is either not installed or the
 log statement is executing outside of a span context.
