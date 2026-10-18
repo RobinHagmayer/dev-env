@@ -62,3 +62,23 @@ subdir = "plugins/show-me/skills/show-me"
 ref = "main"
 installed_commit = "ca7c8088db69e315a8b2deea43820270457f8f3c"
 installed_hash = "ca28e76c6560586b69d2225f8e6fd57aa4969259a6e77488f860fbba7ad451f6"
+
+[skills.observability-fundamentals]
+path = "~/.agents/skills/observability-fundamentals"
+source = "local"
+note = "Adapted from honeycombio/agent-skill (6bb0927), vendor-specific parts removed; not checked for upstream changes"
+
+[skills.otel-instrumentation]
+path = "~/.agents/skills/otel-instrumentation"
+source = "local"
+note = "Adapted from honeycombio/agent-skill (6bb0927), vendor-specific parts removed; not checked for upstream changes"
+
+[skills.otel-genai-instrumentation]
+path = "~/.agents/skills/otel-genai-instrumentation"
+source = "local"
+note = "Adapted from honeycombio/agent-skill (6bb0927), vendor-specific parts removed; not checked for upstream changes"
+
+[skills.otel-migration]
+path = "~/.agents/skills/otel-migration"
+source = "local"
+note = "Adapted from honeycombio/agent-skill (6bb0927), vendor-specific parts removed; not checked for upstream changes"
