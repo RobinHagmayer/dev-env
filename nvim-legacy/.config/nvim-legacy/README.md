@@ -1,4 +1,6 @@
-# Neovim Configuration
+# Legacy Neovim Configuration
+
+Retained fallback for the previous editor setup. Stow `nvim-legacy` to install it and launch it with `nvim-legacy` (or `NVIM_APPNAME=nvim-legacy nvim`). Its config, plugins, tools and state are separate from the primary `nvim` app.
 
 Personal Neovim config built on Neovim 0.12's native package management. No plugin manager dependency.
 

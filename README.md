@@ -93,29 +93,41 @@ unstow it before upgrading (or remove its now-broken symlink). If an old
 The `scripts` package is optional. Neovim and Nerd Font installation are now
 provided by Ansible.
 
-## Modern Neovim (independent trial config)
+## Neovim
 
-Your existing `nvim` config is retained. A second app provides current LSP,
+The modern configuration is now the default for `nvim`. It provides current LSP,
 project-local TypeScript/Effect support, FFF search, syntax editing, completion,
 and contextual feature discovery:
 
 ```sh
-bash nvim-modern/setup-tools.sh
-stow --simulate --verbose nvim-modern
-stow nvim-modern
-nvim-modern
+# Optional: keep the previous configuration available as `nvim-legacy`.
+stow --simulate --verbose nvim-legacy
+stow nvim-legacy
+
+# Before first launch, move old app data aside if you want to preserve it:
+for root in "${XDG_DATA_HOME:-$HOME/.local/share}" \
+            "${XDG_STATE_HOME:-$HOME/.local/state}" \
+            "${XDG_CACHE_HOME:-$HOME/.cache}"; do
+  if [ -e "$root/nvim" ] && [ ! -e "$root/nvim-legacy" ]; then
+    mv -- "$root/nvim" "$root/nvim-legacy"
+  fi
+done
+
+bash nvim/setup-tools.sh
+stow --simulate --verbose nvim
+stow nvim
+nvim
 ```
 
-The launcher sets `NVIM_APPNAME=nvim-modern`, isolating plugins, Mason tools,
-cache, and state. Plain `nvim` still uses the old config. Use **Space ?** for
-contextual actions, **Space h h** for the guide, and **Space u h** for health.
-See [nvim-modern/README.md](nvim-modern/README.md) for prerequisites, keymaps,
+Use **Space ?** for contextual actions, **Space h h** for the guide, and
+**Space u h** for health. The old config is available as `nvim-legacy` after
+stowing that package (`NVIM_APPNAME=nvim-legacy nvim` also works). See
+[nvim/README.md](nvim/README.md) for prerequisites, migration, keymaps,
 Effect/Oxlint project setup, updates, tests, and rollback.
 
-The latest upstream runtime is separately pinned in
-`ansible/playbooks/neovim-modern.yml` and installed into
-`~/.local/opt/nvim-modern` without replacing the system Neovim. Its experimental
-HEAD build is optional; the new config also works with Neovim 0.12+.
+The primary config requires Neovim 0.12+. The separately pinned upstream HEAD
+runtime in `ansible/playbooks/neovim-modern.yml` remains an optional experimental
+build at `~/.local/opt/nvim-modern`; it does not replace the system Neovim.
 
 ## Regional formats (German dates, currency and units, English UI)
 

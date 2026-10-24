@@ -4,7 +4,7 @@ vim.api.nvim_create_autocmd("VimEnter", {
   once = true,
   callback = function()
     vim.schedule(function()
-      local ok, err = pcall(dofile, assert(vim.env.MODERN_TEST_SCRIPT))
+      local ok, err = pcall(dofile, assert(vim.env.NVIM_TEST_SCRIPT))
       if not ok then
         io.stderr:write(tostring(err) .. "\n")
         vim.cmd("cquit")

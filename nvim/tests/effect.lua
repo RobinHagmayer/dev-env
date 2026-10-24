@@ -1,5 +1,5 @@
--- MODERN_EFFECT_FIXTURES points to two independently configured temp projects.
-local fixtures = assert(vim.env.MODERN_EFFECT_FIXTURES)
+-- NVIM_EFFECT_FIXTURES points to two independently configured temp projects.
+local fixtures = assert(vim.env.NVIM_EFFECT_FIXTURES)
 local function effect_diagnostics(buf)
   local out = {}
   for _, diagnostic in ipairs(vim.diagnostic.get(buf)) do

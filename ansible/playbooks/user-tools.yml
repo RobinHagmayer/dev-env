@@ -16,7 +16,7 @@
   vars:
     manage_system_packages: false
 
-- name: Reconcile isolated modern Neovim without sudo
+- name: Reconcile optional Neovim HEAD runtime without sudo
   ansible.builtin.import_playbook: neovim-modern.yml
   vars:
     manage_system_packages: false

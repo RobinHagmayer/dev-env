@@ -1,5 +1,5 @@
 -- Offline tests: no plugin downloads, no project dependency installation.
-local config = assert(vim.env.MODERN_CONFIG)
+local config = assert(vim.env.NVIM_CONFIG)
 vim.opt.runtimepath:prepend(config)
 package.path = config .. "/lua/?.lua;" .. config .. "/lua/?/init.lua;" .. package.path
 local count = 0

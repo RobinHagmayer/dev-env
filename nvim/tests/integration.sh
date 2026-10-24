@@ -9,14 +9,14 @@ sandbox=$(mktemp -d)
 trap 'rm -rf -- "$sandbox"' EXIT
 export XDG_CONFIG_HOME="$sandbox/config" XDG_DATA_HOME="$sandbox/data"
 export XDG_STATE_HOME="$sandbox/state" XDG_CACHE_HOME="$sandbox/cache"
-export NVIM_APPNAME=nvim-modern
+export NVIM_APPNAME=nvim
 mkdir -p "$XDG_CONFIG_HOME" "$sandbox/projects/deps"
-cp -a "$root/.config/nvim-modern" "$XDG_CONFIG_HOME/nvim-modern"
+cp -a "$root/.config/nvim" "$XDG_CONFIG_HOME/nvim"
 bash "$root/setup-tools.sh"
-export PATH="$XDG_DATA_HOME/nvim-modern/tools/node_modules/.bin:$PATH"
-export MODERN_FIXTURE="$sandbox/lua"
-export MODERN_EFFECT_FIXTURES="$sandbox/projects"
-export MODERN_LEGACY_FIXTURE="$sandbox/projects/classic"
+export PATH="$XDG_DATA_HOME/nvim/tools/node_modules/.bin:$PATH"
+export NVIM_FIXTURE="$sandbox/lua"
+export NVIM_EFFECT_FIXTURES="$sandbox/projects"
+export NVIM_CLASSIC_TS_FIXTURE="$sandbox/projects/classic"
 node --input-type=module <<'JS'
 import fs from "node:fs";
 import path from "node:path";
@@ -24,10 +24,10 @@ const put = (filename, content) => {
   fs.mkdirSync(path.dirname(filename), { recursive: true });
   fs.writeFileSync(filename, typeof content === "string" ? content : JSON.stringify(content, null, 2));
 };
-const base = process.env.MODERN_EFFECT_FIXTURES;
+const base = process.env.NVIM_EFFECT_FIXTURES;
 put(base + "/deps/package.json", { private: true });
-put(process.env.MODERN_FIXTURE + "/.luarc.json", {});
-put(process.env.MODERN_FIXTURE + "/sample.lua", "local x={a=1,b=2}\n-- needle\nlocal function add(a, b)\nreturn a+b\nend\n");
+put(process.env.NVIM_FIXTURE + "/.luarc.json", {});
+put(process.env.NVIM_FIXTURE + "/sample.lua", "local x={a=1,b=2}\n-- needle\nlocal function add(a, b)\nreturn a+b\nend\n");
 for (const name of ["effect-lsp", "effect-oxlint"]) {
   put(base + "/" + name + "/package.json", { private: true, type: "module" });
   put(base + "/" + name + "/sample.ts", 'import { Effect } from "effect"\nEffect.log("Hello world!")\n');
@@ -51,8 +51,8 @@ pnpm add --dir "$sandbox/projects/deps" --ignore-scripts -D \
 ln -s ../deps/node_modules "$sandbox/projects/effect-lsp/node_modules"
 ln -s ../deps/node_modules "$sandbox/projects/effect-oxlint/node_modules"
 pnpm add --dir "$sandbox/projects/classic" --ignore-scripts -D typescript@5.9.3
-export MODERN_HEADLESS="$root/tests/headless.lua"
+export NVIM_HEADLESS="$root/tests/headless.lua"
 for script in integration.lua palette.lua effect.lua legacy-typescript.lua; do
-  export MODERN_TEST_SCRIPT="$root/tests/$script"
-  timeout 240 "${NVIM_MODERN_BIN:-nvim}" --headless '+lua dofile(vim.env.MODERN_HEADLESS)'
+  export NVIM_TEST_SCRIPT="$root/tests/$script"
+  timeout 240 "${NVIM_BIN:-nvim}" --headless '+lua dofile(vim.env.NVIM_HEADLESS)'
 done

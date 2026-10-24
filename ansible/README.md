@@ -68,7 +68,7 @@ uv run ansible-playbook playbooks/user-tools.yml --check --diff
 ```
 
 Without tags it reconciles developer tools (including Pulumi and Dev Tunnels),
-AI tools, Ghostty, isolated modern Neovim and Nerd Fonts.
+AI tools, Ghostty, the optional pinned Neovim HEAD runtime and Nerd Fonts.
 It reuses the provisioning playbooks with `manage_system_packages: false`,
 including dependency roles. It checks installed prerequisites with
 unprivileged `dpkg-query`; it does **not** install/remove system packages,
@@ -165,8 +165,8 @@ Build Neovim from source and install it as a DEB package (so `dpkg`/`apt remove 
 uv run ansible-playbook playbooks/neovim.yml --ask-become-pass
 ```
 
-For the modern trial config, build the pinned current upstream HEAD into a
-**separate user prefix**, leaving the system Neovim/runtime alone:
+The optional current-upstream HEAD runtime can be built into a **separate user
+prefix**, leaving the stable system Neovim/runtime alone:
 
 ```sh
 uv run ansible-playbook playbooks/neovim-modern.yml --ask-become-pass
@@ -174,13 +174,15 @@ uv run ansible-playbook playbooks/neovim-modern.yml --ask-become-pass
 uv run ansible-playbook playbooks/user-tools.yml --tags neovim-modern
 ```
 
-The `nvim-modern` Stow launcher prefers `~/.local/opt/nvim-modern/bin/nvim`.
-The modern playbook selects an exact source commit in its vars; update that SHA
-deliberately after reviewing Neovim's `news-breaking` documentation. The role
-records its successful build signature and rebuilds only when the pin/build
-type changes or its binary is missing. No `sudo` is used for the prefix install.
-The ordinary `neovim.yml` retains the latest stable 0.12.5 system DEB path.
-See [the editor guide](../nvim-modern/README.md) for setup and isolation.
+The primary Stow package uses the normal `nvim` command and works with Neovim
+0.12+. To try the optional HEAD build, invoke
+`~/.local/opt/nvim-modern/bin/nvim`; it loads the same primary config. The
+playbook selects an exact source commit; update that SHA deliberately after
+reviewing Neovim's `news-breaking` documentation. The role records its
+successful build signature and rebuilds only when the pin/build type changes or
+its binary is missing. No `sudo` is used for the prefix install. The ordinary
+`neovim.yml` installs stable Neovim 0.12.6 as a system DEB. See
+[the editor guide](../nvim/README.md) for setup and the retained legacy config.
 
 Every role declares the system packages it needs (tasks tagged `packages`).
 Provisioning installs them with sudo; sudo-free reconciliation validates them.

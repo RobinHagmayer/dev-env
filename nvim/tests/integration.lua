@@ -9,8 +9,8 @@ end
 check(#guide.actions >= 35, "Feature guide missing actions")
 check(vim.fn.exists(":EditorFeatures") == 2, "Missing contextual palette")
 check(vim.fn.exists(":EditorReminders") == 2, "Missing reminder controls")
-check(vim.fn.stdpath("data"):match("nvim%-modern$"), "App data not isolated")
-local fixture = assert(vim.env.MODERN_FIXTURE)
+check(vim.fn.stdpath("data"):match("nvim$"), "Primary app data must use the nvim namespace")
+local fixture = assert(vim.env.NVIM_FIXTURE)
 vim.cmd.edit(vim.fn.fnameescape(fixture .. "/sample.lua"))
 check(
   vim.wait(60000, function()

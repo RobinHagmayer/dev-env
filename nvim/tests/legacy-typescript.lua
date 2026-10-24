@@ -1,4 +1,4 @@
-vim.cmd.edit(vim.fn.fnameescape(assert(vim.env.MODERN_LEGACY_FIXTURE) .. "/sample.ts"))
+vim.cmd.edit(vim.fn.fnameescape(assert(vim.env.NVIM_CLASSIC_TS_FIXTURE) .. "/sample.ts"))
 local buf = vim.api.nvim_get_current_buf()
 assert(
   vim.wait(90000, function()

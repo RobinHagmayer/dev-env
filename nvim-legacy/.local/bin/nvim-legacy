@@ -1,0 +1,4 @@
+#!/bin/sh
+# Launch the retained configuration and its isolated Neovim app directories.
+export NVIM_APPNAME=nvim-legacy
+exec nvim "$@"

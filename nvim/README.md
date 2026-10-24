@@ -1,28 +1,38 @@
-# Modern Neovim, without replacing the old editor
+# Primary Neovim configuration
 
 **Goal:** a usable editor that follows the project, explains its features, and
 does not require learning its plugin configuration.
 
 ## Launch and rollback
 
-From the repository root:
+From the repository root, the modern configuration is now the default `nvim` app:
 
 ```sh
-bash nvim-modern/setup-tools.sh
-stow --simulate --verbose nvim-modern
-stow nvim-modern
-nvim-modern
-# Or, using whichever nvim binary is on PATH:
-NVIM_APPNAME=nvim-modern nvim
+# Optional: preserve the previous setup as a separately launchable fallback.
+stow --simulate --verbose nvim-legacy
+stow nvim-legacy
+
+# Close Neovim first. To retain old plugin/tool state, move it before first launch.
+for root in "${XDG_DATA_HOME:-$HOME/.local/share}" \
+            "${XDG_STATE_HOME:-$HOME/.local/state}" \
+            "${XDG_CACHE_HOME:-$HOME/.cache}"; do
+  if [ -e "$root/nvim" ] && [ ! -e "$root/nvim-legacy" ]; then
+    mv -- "$root/nvim" "$root/nvim-legacy"
+  fi
+done
+
+bash nvim/setup-tools.sh
+stow --simulate --verbose nvim
+stow nvim
+nvim
 ```
 
-The launcher prefers `~/.local/opt/nvim-modern/bin/nvim`, falling back to `nvim`.
-`NVIM_MODERN_BIN=/path/to/nvim nvim-modern` overrides it.
-
-**Normal `nvim` still loads your original configuration.** We neither source nor
-modify `nvim/.config/nvim`. Neovim's `NVIM_APPNAME` isolates config, plugin
-installations, undo/history/state, cache, and Mason tools. To disable the new
-app: `stow -D nvim-modern`. Its local data remains; nothing is deleted.
+The default system Neovim binary is used. The old configuration is available as
+`nvim-legacy` (or `NVIM_APPNAME=nvim-legacy nvim`) after stowing `nvim-legacy`.
+It uses separate config, plugins, undo/history/state, cache, and Mason tools.
+If either legacy data destination already exists, review and merge it manually
+rather than overwriting it. `stow -D nvim` removes the primary configuration;
+local plugin/tool data is retained.
 
 The same isolation does **not** sandbox projects or external language servers.
 Project-local binaries run with your normal user's privileges, as in other
@@ -42,9 +52,9 @@ uv run ansible-playbook playbooks/neovim-modern.yml --ask-become-pass
 uv run ansible-playbook playbooks/neovim-modern.yml --skip-tags packages
 ```
 
-This does not replace the system binary or runtime. HEAD is experimental; the
-existing editor is your fallback. The config requires Neovim **0.12+**.
-The ordinary `neovim.yml` still provides the latest stable **0.12.5** system DEB.
+This does not replace the system binary or runtime. The HEAD build is optional
+and experimental; the primary config works with Neovim **0.12+**. The ordinary
+`neovim.yml` provides the stable system Neovim package.
 
 Need Git, curl, tar, a C compiler, Node.js, npm, and Tree-sitter CLI **0.26.1+**.
 Ripgrep is useful for auxiliary pickers. Install developer runtimes with the
@@ -54,7 +64,7 @@ Tree-sitter CLI via Cargo (not npm). It downloads packages explicitly; it does
 not run during editor startup. An already-present outdated CLI is reported by
 `:EditorHealth`; update it with `cargo install tree-sitter-cli --locked`.
 The private npm dependency can be updated by rerunning its
-`pnpm add --dir ~/.local/share/nvim-modern/tools --ignore-scripts editor-npm@npm:npm@latest`.
+`pnpm add --dir ~/.local/share/nvim/tools --ignore-scripts editor-npm@npm:npm@latest`.
 
 Plugins install on first launch, using **native `vim.pack`**. Initial installation
 requires the network. FFF downloads a native binary with a Cargo build fallback.
@@ -218,7 +228,7 @@ Space u p opens Neovim's native update review: `:write` accepts, `:quit`
 cancels. Tree-sitter parsers update when its plugin updates; FFF's native binary
 is rebuilt/downloaded when it updates. Restart afterwards.
 Space u t explicitly updates **all installed Mason packages**, not project
-dependencies. Update the runtime SHA in the modern playbook deliberately.
+dependencies. Update the optional runtime SHA in the modern playbook deliberately.
 
 On another machine with existing plugins, pulling the lockfile alone does not
 switch installed revisions: use
@@ -227,11 +237,11 @@ switch installed revisions: use
 ## Tests and documentation consulted
 
 ```sh
-bash nvim-modern/tests/run.sh
-# Use the isolated latest runtime:
-NVIM_MODERN_BIN="$HOME/.local/opt/nvim-modern/bin/nvim" bash nvim-modern/tests/run.sh
+bash nvim/tests/run.sh
+# Use the optional isolated HEAD runtime:
+NVIM_BIN="$HOME/.local/opt/nvim-modern/bin/nvim" bash nvim/tests/run.sh
 # Networked integration tests: isolated temporary projects and app directories.
-NVIM_MODERN_BIN="$HOME/.local/opt/nvim-modern/bin/nvim" bash nvim-modern/tests/integration.sh
+NVIM_BIN="$HOME/.local/opt/nvim-modern/bin/nvim" bash nvim/tests/integration.sh
 ```
 
 Offline tests cover local TypeScript selection, native vs legacy fallback,
