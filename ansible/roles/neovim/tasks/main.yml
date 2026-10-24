@@ -76,11 +76,21 @@
   check_mode: false
   when: neovim_source_git.stat.exists
 
+- name: Refuse to discard tracked source modifications
+  ansible.builtin.assert:
+    that: neovim_local_changes.stdout | default('') | length == 0
+    fail_msg: >-
+      {{ neovim_src_dir }} has tracked modifications. Commit, stash or discard
+      them before updating Neovim.
+
+# force lets the fetch overwrite upstream's moving tags (nightly, stable), which
+# otherwise make `git fetch --tags` fail. Modifications are rejected above.
 - name: Check out Neovim source
   ansible.builtin.git:
     repo: "{{ neovim_repo }}"
     dest: "{{ neovim_src_dir }}"
     version: "{{ neovim_version }}"
+    force: true
     update: >-
       {{ neovim_local_pin.rc | default(1) != 0 or
          neovim_local_pin.stdout_lines | default([]) | length != 2 or
