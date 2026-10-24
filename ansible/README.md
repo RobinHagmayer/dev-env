@@ -227,7 +227,6 @@ Fish inherits `PULUMI_HOME` and PATH through `interactive-shell`;
 desktop apps/services need explicit environment configuration.
 Remove any old installer PATH stanza from Bash and restart terminals with
 `exec ~/.local/bin/interactive-shell`.
-Role-boundary regression checks are documented in [tests/README.md](tests/README.md).
 
 Rust, pnpm and Go also generate POSIX environment fragments in `~/.config/shell/env.d`. The `shell` Stow package of this repository (`~/.dotfiles/shell`) loads them for Bash and its interactive Fish launcher; installation paths and generated exports come from the same role defaults. These files configure terminal environments, not GNOME or systemd services. Rust data lives in `~/.local/share/cargo` (`rust_home`) and `~/.local/share/rustup` (`rust_toolchain_home`). Existing `~/.cargo` and `~/.rustup` directories are moved there, with compatibility symlinks retained for old terminals; the role refuses to merge two existing installations. Rust uses `--no-modify-path`, and pnpm's installer runs with an isolated HOME so neither adds configuration to your real startup files. Rerun `user-tools.yml --tags rust,pnpm,go` after changing their settings. Removing a tool does not automatically remove its environment fragment.
 
@@ -334,7 +333,6 @@ Runtime verification during installation uses `--version`, which contacts
 Microsoft's tunnel service and can initialize local CLI settings.
 The wrapper also works outside initialized terminal shells; desktop services
 must supply any custom XDG paths explicitly.
-Role-boundary checks are documented in [tests/README.md](tests/README.md).
 
 ## Version policy
 
