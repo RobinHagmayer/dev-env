@@ -1,0 +1,6 @@
+---
+- name: Install pinned Google Cloud CLI
+  hosts: workstations
+  roles:
+    - role: gcloud
+      tags: [gcloud, packages]

@@ -1,0 +1,124 @@
+---
+- name: Check supported operating system and explicit Google Cloud CLI version
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['distribution'] in ['Debian', 'Ubuntu']
+      - gcloud_version is string
+      - gcloud_version is match('^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+$')
+    fail_msg: This role requires Debian or Ubuntu and an exact google-cloud-cli package version (e.g. 589.0.0-0).
+
+- name: Install or validate system packages for Google Cloud CLI
+  ansible.builtin.include_role:
+    name: system_packages
+    apply:
+      tags: [packages]
+  vars:
+    system_packages_names: [ca-certificates, python3-debian]
+    system_packages_bootstrap_playbook: gcloud.yml
+  tags: [packages]
+
+- name: Validate the pinned Google Cloud CLI without sudo
+  when: not (manage_system_packages | default(true))
+  tags: [packages]
+  block:
+    - name: Read the installed Google Cloud CLI package
+      ansible.builtin.command:
+        argv: [dpkg-query, --show, "--showformat=${db:Status-Status} ${Version}", google-cloud-cli]
+        expand_argument_vars: false
+      register: gcloud_readonly_package
+      changed_when: false
+      failed_when: gcloud_readonly_package.rc not in [0, 1]
+      check_mode: false
+
+    - name: Require the pinned Google Cloud CLI package
+      ansible.builtin.assert:
+        that:
+          - gcloud_readonly_package.rc == 0
+          - gcloud_readonly_package.stdout | trim == 'installed ' ~ gcloud_version
+        fail_msg: >-
+          Google Cloud CLI must already be installed at {{ gcloud_version }} in sudo-free mode.
+          Run: uv run ansible-playbook playbooks/gcloud.yml --ask-become-pass
+        quiet: true
+
+    - name: Read the Google Cloud CLI package hold
+      ansible.builtin.command:
+        argv: [dpkg, --get-selections, google-cloud-cli]
+      register: gcloud_readonly_hold
+      changed_when: false
+      check_mode: false
+
+    - name: Require the Google Cloud CLI version hold
+      ansible.builtin.assert:
+        that: gcloud_readonly_hold.stdout.split() | last == 'hold'
+        fail_msg: >-
+          Google Cloud CLI must be held at its pin. Run: uv run ansible-playbook playbooks/gcloud.yml --ask-become-pass
+        quiet: true
+
+- name: Install Google Cloud CLI through apt
+  when: manage_system_packages | default(true)
+  become: true
+  tags: [packages]
+  block:
+    - name: Create the apt keyring directory
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Install the verified Google Cloud CLI repository signing key
+      ansible.builtin.get_url:
+        url: "{{ gcloud_keyring_url }}"
+        dest: /etc/apt/keyrings/google-cloud.asc
+        checksum: "sha256:{{ gcloud_keyring_sha256 }}"
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Read the Debian package architecture
+      ansible.builtin.command:
+        argv: [dpkg, --print-architecture]
+      register: gcloud_architecture
+      changed_when: false
+      check_mode: false
+
+    - name: Add the official Google Cloud CLI repository
+      ansible.builtin.deb822_repository:
+        name: google-cloud-cli
+        types: [deb]
+        uris: "{{ gcloud_repository_uri }}"
+        suites: [cloud-sdk]
+        components: [main]
+        architectures: ["{{ gcloud_architecture.stdout | trim }}"]
+        signed_by: /etc/apt/keyrings/google-cloud.asc
+        state: present
+        mode: "0644"
+
+    # Include status so a removed package with residual config is not treated as installed.
+    - name: Check the installed Google Cloud CLI package
+      ansible.builtin.command:
+        argv: [dpkg-query, --show, "--showformat=${db:Status-Status} ${Version}", google-cloud-cli]
+        expand_argument_vars: false
+      register: gcloud_installed
+      changed_when: false
+      failed_when: gcloud_installed.rc not in [0, 1]
+      check_mode: false
+
+    # Do not ask apt to resolve an already-installed pin: upstream may drop old builds.
+    - name: Install the exact Google Cloud CLI version when it differs
+      ansible.builtin.apt:
+        name: "google-cloud-cli={{ gcloud_version }}"
+        state: present
+        allow_downgrade: true
+        allow_change_held_packages: true
+        update_cache: true
+      when: gcloud_installed.rc != 0 or gcloud_installed.stdout | trim != 'installed ' ~ gcloud_version
+
+    # Explicit apt installs may change a held package without first releasing the hold.
+    # On a fresh check-mode run there is no real package for dpkg to hold yet.
+    - name: Hold Google Cloud CLI at the pinned version
+      ansible.builtin.dpkg_selections:
+        name: google-cloud-cli
+        selection: hold
+      when: not ansible_check_mode or gcloud_installed.stdout is match('^installed ')

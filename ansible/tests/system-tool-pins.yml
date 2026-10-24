@@ -5,6 +5,7 @@
     manage_system_packages: false
     ansible_become_exe: /bin/false
     gh_version: "0.0.0"
+    gcloud_version: "0.0.0-0"
     fish_version: "0.0.0"
     neovim_version: v0.0.0
   tasks:
@@ -14,6 +15,9 @@
         - role: gh
           error: GitHub CLI must already be installed at 0.0.0
           bootstrap: gh.yml
+        - role: gcloud
+          error: Google Cloud CLI must already be installed at 0.0.0-0
+          bootstrap: gcloud.yml
         - role: fish
           error: Fish must already be installed at 0.0.0
           bootstrap: fish.yml
