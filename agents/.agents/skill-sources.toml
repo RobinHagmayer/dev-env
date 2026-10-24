@@ -44,16 +44,16 @@ path = "~/.agents/skills/test-audit"
 repo = "https://github.com/openclaw/openclaw.git"
 subdir = ".agents/skills/test-audit"
 ref = "main"
-installed_commit = "96e81e68add41800f68fba88cd9559f1f8dcc885"
-installed_hash = "b0ba92451403184b5cb60443775b06083ec8fc8047f6cc428a9e8ac4b1a1ec5d"
+installed_commit = "59f0420cb0f29ccfce933e95206233d50bba1d70"
+installed_hash = "e6f5b84bf4b95449d46e4b09f128bca1626a19137471c5d405593b0caff589bc"
 
 [skills.effect]
 path = "~/.agents/skills/effect"
 repo = "https://github.com/kitlangton/skills.git"
 subdir = "skills/effect"
 ref = "main"
-installed_commit = "22c35cb7fd29f931789253fc3c8eb142f2863a8a"
-installed_hash = "4a677eada9f1849dc04015713c4888bec27daf75e6e95465b0cc308ef40f448e"
+installed_commit = "71195e36024ebd2e66c5beac946e81eafd5abc43"
+installed_hash = "a4b75d4cd45f7e56545aa75e07f85370b36a4d1cbb2ad5418dc3e6675901503a"
 
 [skills.show-me]
 path = "~/.agents/skills/show-me"
