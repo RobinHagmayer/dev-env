@@ -5,9 +5,9 @@ pulumi_apt_packages:
   - gzip
   - coreutils # checksum manifests
   - findutils # enumerate the complete binary bundle
-pulumi_version: "3.268.0"
-# GitHub release asset digest for pulumi-v3.268.0-linux-x64.tar.gz.
-pulumi_sha256: "903cafeaa9f6327e4bf53a8b7b99ae660f26198acfa804a2f982bf5de3f1de0b"
+pulumi_version: "3.272.0"
+# GitHub release asset digest for pulumi-v3.272.0-linux-x64.tar.gz.
+pulumi_sha256: "58d545f2b98761051922008ebd381ecef95484d7f7a5ff7faa15d7a780ea84f6"
 pulumi_data_dir: "{{ ansible_facts['env'].get('XDG_DATA_HOME') or ansible_facts['user_dir'] ~ '/.local/share' }}"
 pulumi_home: "{{ pulumi_data_dir }}/pulumi"
 pulumi_download_dir: "{{ ansible_facts['env'].get('XDG_CACHE_HOME') or ansible_facts['user_dir'] ~ '/.cache' }}/ansible-downloads"

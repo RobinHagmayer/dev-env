@@ -1,5 +1,5 @@
 ---
-codex_version: "0.160.0"
+codex_version: "0.164.0"
 codex_home: "{{ ansible_facts['user_dir'] }}/.codex"
 codex_apt_packages:
   - ca-certificates

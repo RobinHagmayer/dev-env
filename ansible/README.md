@@ -131,7 +131,7 @@ Install pinned GitHub CLI and the pinned `gh stack` extension. The CLI comes fro
 uv run ansible-playbook playbooks/gh.yml --ask-become-pass
 ```
 
-The `gh` role installs the exact `gh_version` in `roles/gh/defaults/main.yml` (currently `2.102.0`) and puts the package on apt hold, preventing `apt upgrade` and unattended upgrades from changing it. To update or downgrade, deliberately change that pin and rerun the playbook. If the installed package already matches, the role skips the package installation even if the repository has dropped that version. An unavailable new pin fails instead of falling back to latest. The repository signing key is SHA256-verified and scoped to this repository; update its checksum deliberately if GitHub rotates the key. All installation tasks require sudo and are tagged `packages`. Authentication (`gh auth login`) is a separate manual step; no credentials are managed.
+The `gh` role installs the exact `gh_version` in `roles/gh/defaults/main.yml` (currently `2.103.2`) and puts the package on apt hold, preventing `apt upgrade` and unattended upgrades from changing it. To update or downgrade, deliberately change that pin and rerun the playbook. If the installed package already matches, the role skips the package installation even if the repository has dropped that version. An unavailable new pin fails instead of falling back to latest. The repository signing key is SHA256-verified and scoped to this repository; update its checksum deliberately if GitHub rotates the key. All installation tasks require sudo and are tagged `packages`. Authentication (`gh auth login`) is a separate manual step; no credentials are managed.
 
 Install Fish shell from the [official Ubuntu Fish 4 PPA](https://launchpad.net/~fish-shell/+archive/ubuntu/release-4):
 
@@ -141,7 +141,7 @@ uv run ansible-playbook playbooks/fish.yml --ask-become-pass
 
 This Ubuntu-only role adds the PPA with a repository-scoped signing key and installs the exact `fish_version` apt package, including its Ubuntu release suffix. The default is for this machine's Ubuntu release; override it for other releases after checking `apt-cache policy fish`. Rerunning does nothing when the installed version already matches `fish_version`, even if the PPA has since dropped that build. Fish is placed on apt hold so `apt upgrade` and unattended upgrades cannot move it; changing `fish_version` releases the hold, installs the new version and holds again. A new pin that is not (or no longer) in the PPA causes a failure rather than a fallback to latest; the PPA keeps only the current build per Ubuntu release, so reinstalling an old pin later may require another source. Unlike the user-home installs, all installation steps require sudo and are tagged `packages`. Your login shell and shell configuration are unchanged.
 
-Install Meslo Nerd Font v3.4.0 (migrated from `~/.dotfiles/scripts/.local/scripts/install-nerd-font`):
+Install Meslo Nerd Font v3.5.1 (migrated from `~/.dotfiles/scripts/.local/scripts/install-nerd-font`):
 
 ```sh
 uv run ansible-playbook playbooks/nerd-fonts.yml --ask-become-pass
@@ -196,7 +196,7 @@ uv run ansible-playbook playbooks/user-tools.yml --tags go,zig
 The `gh_stack` role installs the `gh stack` extension (github/gh-stack, stacked pull requests) pinned to `gh_stack_version`, with the `gh` role as a dependency. Both are installed by `playbooks/gh.yml`, or by `uv run ansible-playbook playbooks/dev-tools.yml --tags gh_stack --ask-become-pass`. Only the CLI's system-package tasks use sudo; the extension installs as your normal user. Extension downloads require GitHub CLI authentication (`gh auth login`, or a token supplied externally); credentials are not managed here. Reruns check the extension's repository, release tag, pin state and executable, so an already-correct installation needs no download or change. Different versions and unpinned installations are replaced after checking that the requested release exists; a later download failure can still leave the extension absent. Check mode does not install or remove extensions. The extension directory follows `XDG_DATA_HOME` (otherwise `~/.local/share`).
 
 Pulumi is managed by `roles/pulumi` in `dev-tools.yml` (`--tags pulumi`). It
-pins v3.268.0 and the SHA256 digest of the official Linux x86_64 archive.
+pins v3.272.0 and the SHA256 digest of the official Linux x86_64 archive.
 `PULUMI_HOME` defaults to `${XDG_DATA_HOME:-$HOME/.local/share}/pulumi`.
 This relocates Pulumi's combined global configuration/plugin home, rather
 than splitting config/cache/state. The download cache and environment fragment
@@ -244,7 +244,7 @@ uv run ansible-playbook playbooks/gcloud.yml --ask-become-pass
 uv run ansible-playbook playbooks/user-tools.yml --tags gcloud
 ```
 
-The `gcloud` role pins `google-cloud-cli` to `589.0.0-0` and holds the package
+The `gcloud` role pins `google-cloud-cli` to `590.0.0-0` and holds the package
 against apt/unattended upgrades. Change `gcloud_version` in
 `roles/gcloud/defaults/main.yml`, then rerun provisioning to upgrade or downgrade.
 An unavailable pin fails rather than falling back to latest. Google retains

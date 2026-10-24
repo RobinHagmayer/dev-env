@@ -1,6 +1,6 @@
 ---
 # Exact apt package version, including Debian revision. Update deliberately.
-gcloud_version: "589.0.0-0"
+gcloud_version: "590.0.0-0"
 
 # Official Google repository key, SHA256 recorded from the upstream HTTPS URL.
 # The key is ASCII-armored; apt supports .asc keyrings without dearmoring.

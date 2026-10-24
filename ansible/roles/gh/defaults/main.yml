@@ -1,6 +1,6 @@
 ---
 # Exact apt package version. Change deliberately, then rerun playbooks/gh.yml.
-gh_version: "2.102.0"
+gh_version: "2.103.2"
 
 # Official GitHub CLI repository and checksum published in its install docs.
 gh_repository_uri: https://cli.github.com/packages

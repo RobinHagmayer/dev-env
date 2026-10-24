@@ -5,7 +5,7 @@
       - ansible_facts['distribution'] in ['Debian', 'Ubuntu']
       - gcloud_version is string
       - gcloud_version is match('^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+$')
-    fail_msg: This role requires Debian or Ubuntu and an exact google-cloud-cli package version (e.g. 589.0.0-0).
+    fail_msg: This role requires Debian or Ubuntu and an exact google-cloud-cli package version (e.g. 590.0.0-0).
 
 - name: Install or validate system packages for Google Cloud CLI
   ansible.builtin.include_role:
