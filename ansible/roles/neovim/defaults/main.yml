@@ -12,7 +12,7 @@ neovim_apt_packages:
 # Stable system install by default; the modern playbook uses a pinned HEAD
 # commit and a separate user prefix. Check breaking changes before upgrading:
 # https://neovim.io/doc/user/news.html#news-breaking
-neovim_version: "v0.12.5"
+neovim_version: "v0.12.6"
 neovim_repo: https://github.com/neovim/neovim.git
 neovim_src_dir: "{{ ansible_facts['user_dir'] }}/.local/src/neovim"
 neovim_build_type: RelWithDebInfo

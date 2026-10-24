@@ -4,7 +4,7 @@
     that:
       - gh_stack_version is string
       - gh_stack_version is match('^v[0-9]+\.[0-9]+\.[0-9]+$')
-    fail_msg: gh_stack_version must be an exact release tag (e.g. v0.2.0).
+    fail_msg: gh_stack_version must be an exact release tag (e.g. v0.2.1).
 
 # The dependency installs gh in normal mode. On a fresh check-mode run it may
 # still be absent, so do not try to execute it in that case.

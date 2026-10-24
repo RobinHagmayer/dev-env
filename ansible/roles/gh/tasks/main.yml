@@ -5,7 +5,7 @@
       - ansible_facts['distribution'] in ['Debian', 'Ubuntu']
       - gh_version is string
       - gh_version is match('^[0-9]+\.[0-9]+\.[0-9]+$')
-    fail_msg: This role requires Debian or Ubuntu and an exact gh package version (e.g. 2.102.0).
+    fail_msg: This role requires Debian or Ubuntu and an exact gh package version (e.g. 2.103.2).
 
 - name: Install or validate system packages for GitHub CLI
   ansible.builtin.include_role:
