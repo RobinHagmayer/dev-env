@@ -131,9 +131,9 @@ build at `~/.local/opt/nvim-modern`; it does not replace the system Neovim.
 
 ## Regional formats (German dates, currency and units, English UI)
 
-The `locale` package keeps the display language English (`LANG=en_US.UTF-8`) but
-sets the regional formats (`LC_TIME`, `LC_MONETARY`, `LC_NUMERIC`,
-`LC_MEASUREMENT`, `LC_PAPER`) to `de_DE.UTF-8` through
+The `locale` package keeps the display language English (`LANG=en_US.UTF-8`,
+with `LANGUAGE=en_GB:en`, see below) but sets the regional formats (`LC_TIME`,
+`LC_MONETARY`, `LC_NUMERIC`, `LC_MEASUREMENT`, `LC_PAPER`) to `de_DE.UTF-8` through
 `~/.config/environment.d/`. Unlike `shell/env.sh`, the systemd user session
 reads this, so desktop apps such as Microsoft Edge inherit it. Generate the
 locale first, then stow and log out and back in:
@@ -145,8 +145,12 @@ stow --no-folding locale
 
 In Edge, set Settings > Languages > "Share additional operating system region"
 to the fuller option. That setting lives in the browser profile and is not
-tracked here. Whether Edge reads the `LC_*` variables is untested; the
-fallback is launching it with `--lang=en-DE`.
+tracked here. Edge web content follows `LC_TIME`, but Chromium formats native
+time pickers (`<input type="time">`, e.g. the HaloPSA timesheet start and
+finish times) with its UI locale, which comes from `LANGUAGE`/`LC_MESSAGES`/`LANG`.
+With `en_US` they show AM/PM, so the package also sets `LANGUAGE=en_GB:en`:
+English UI, 24-hour pickers. Other gettext apps use British spellings as a side
+effect.
 
 ## T3 Code data directory
 
