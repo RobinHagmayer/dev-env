@@ -1,0 +1,43 @@
+{
+  "skill_name": "jsdoc",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Work only in the provided temporary workspace. Create src/uniqueInOrder.ts and an export in src/index.ts. Implement a public TypeScript function uniqueInOrder(values: readonly string[]): string[] that removes duplicate strings, preserves first-occurrence order, compares case-sensitively, and leaves the input unchanged. There are no existing documentation rules, mandatory tags, or documentation runners. Add only documentation useful to callers. Do not install dependencies. The task is done when both files exist, the API comment is accurate, and a short report distinguishes checks actually run from unavailable checks. Ask only if an API decision cannot be derived from these requirements.",
+      "expected_output": "A minimal implemented/exported API with useful JSDoc, without mandatory Effect tags or invented verification.",
+      "files": [],
+      "assertions": [
+        "uniqueInOrder returns exactly ['b', 'a', 'A'] for ['b', 'a', 'b', 'A'] and does not mutate the input.",
+        "The documentation explains ordering and case-sensitive equality instead of merely repeating the TypeScript return type.",
+        "No @since/@category/@stability tags or new documentation dependencies are introduced without a project requirement.",
+        "An example is not reported as a passing doctest merely because it uses // => notation."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Work only in the provided temporary workspace. Create src/splitOnce.js with the following unchanged function code and add its JSDoc: export function splitOnce(input, separator) { if (separator === \"\") throw new RangeError(\"separator must not be empty\"); const index = input.indexOf(separator); return index < 0 ? undefined : [input.slice(0, index), input.slice(index + separator.length)]; } The project uses classic JSDoc with @param {Type}, @returns {Type}, @throws, and @example, plus checkJs. It has no example runner. Do not change runtime behavior or install dependencies. The task is done when the file has type annotations and a short explanation of the first separator, an empty separator, and a missing separator; report actual checks separately from checks not run. Ask only if the specified contract is ambiguous.",
+      "expected_output": "JavaScript JSDoc as a type contract, established @example syntax, and accurate error/return semantics without runtime changes.",
+      "files": [],
+      "assertions": [
+        "@param annotates both parameters as string, and @returns describes [string, string] | undefined.",
+        "An empty separator is documented as causing RangeError; a missing separator is documented as returning undefined.",
+        "The splitOnce('a=b=c', '=') example preserves the remaining suffix b=c.",
+        "Local @example rules are preserved; Effect markers and mandatory metadata are not imposed.",
+        "The function implementation remains semantically identical; execution and checkJs verification are not conflated."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Work only in the provided temporary workspace. Write the following file as src/loadText.ts and improve only its public documentation. Project convention: TypeDoc with @remarks and @example, preserve existing @since values, no required @category/@stability tags. The current comment is: /** Loads text. Cancels network work automatically and rejects on HTTP errors. @since 1.4.0 */. Preserve this function unchanged: export async function loadText(url: string): Promise<string> { const response = await fetch(url); return response.text(); } Do not add dependencies or network access for examples. Describe verifiable behavior and report contradictory guarantees instead of silently fixing runtime code. The task is done when the documented file exists and a short report puts necessary contract questions first and honestly states the checks performed. Ask only about an unspecified intended contract; independently verified corrections may proceed.",
+      "expected_output": "Project-conforming documentation corrections that preserve @since and identify cancellation/HTTP-status discrepancies without code changes.",
+      "files": [],
+      "assertions": [
+        "The documentation promises neither automatic cancellation nor rejection solely because of an HTTP error status.",
+        "@since remains 1.4.0; the current package version is neither invented nor substituted.",
+        "Existing TypeDoc/@remarks/@example conventions are respected; no Effect-specific migration is performed.",
+        "The implementation's fetch, status handling, and AbortSignal behavior are not changed.",
+        "The final report distinguishes observed behavior from the unresolved intended contract and claims no unverified network or type checks."
+      ]
+    }
+  ]
+}
