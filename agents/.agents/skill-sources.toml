@@ -39,6 +39,11 @@ path = "~/.agents/skills/writing-claude-prompts"
 source = "local"
 note = "No GitHub reference"
 
+[skills.jsdoc]
+path = "~/.agents/skills/jsdoc"
+source = "local"
+note = "General API documentation skill; adapted from Effect research, with project conventions taking precedence"
+
 [skills.test-audit]
 path = "~/.agents/skills/test-audit"
 repo = "https://github.com/openclaw/openclaw.git"

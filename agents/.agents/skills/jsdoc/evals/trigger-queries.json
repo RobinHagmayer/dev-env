@@ -1,0 +1,82 @@
+[
+  {
+    "query": "Extend the exported RetryOptions in packages/client/src/retry.ts with maxDelay. Update the implementation and public types.",
+    "should_trigger": true
+  },
+  {
+    "query": "Add a public parseDuration function to our TypeScript SDK. Follow the existing package exports.",
+    "should_trigger": true
+  },
+  {
+    "query": "The hover text for createSession claims that abort() stops the request, but it keeps running in the tests. Check the contract.",
+    "should_trigger": true
+  },
+  {
+    "query": "TypeDoc reports unresolved links and unknown tags in src/api/Client.ts. Please fix them.",
+    "should_trigger": true
+  },
+  {
+    "query": "Our public useSubscription hook should now clean up on unmount. Implement this and keep the API contract consistent.",
+    "should_trigger": true
+  },
+  {
+    "query": "Change the exported getUser API from Promise<User | null> to Promise<Option<User>> and update the affected consumer-facing code.",
+    "should_trigger": true
+  },
+  {
+    "query": "Review the diff for our published TypeScript package. The new configuration fields specify durations without clear units.",
+    "should_trigger": true
+  },
+  {
+    "query": "Improve the JSDoc examples for mapValues; they currently show only the call, not the result.",
+    "should_trigger": true
+  },
+  {
+    "query": "Enable checkJs for src/splitOnce.js and correct the JSDoc type annotations without changing behavior.",
+    "should_trigger": true
+  },
+  {
+    "query": "Refactor the overloads of the exported find function. Preserve the public contract and signature help.",
+    "should_trigger": true
+  },
+  {
+    "query": "Run only Prettier on src/api.ts. Keep content and behavior unchanged.",
+    "should_trigger": false
+  },
+  {
+    "query": "Only sort imports in our TypeScript files; make no other changes.",
+    "should_trigger": false
+  },
+  {
+    "query": "Optimize the local, unexported loop in renderRow. No API contract changes.",
+    "should_trigger": false
+  },
+  {
+    "query": "Change only the spacing and font size of the React login page using CSS.",
+    "should_trigger": false
+  },
+  {
+    "query": "Write a marketing paragraph about our vision for the README, without describing code APIs.",
+    "should_trigger": false
+  },
+  {
+    "query": "Add docstrings to this Python API and run Sphinx.",
+    "should_trigger": false
+  },
+  {
+    "query": "Fix only the flaky snapshot test in Client.test.ts; leave production code and documentation examples unchanged.",
+    "should_trigger": false
+  },
+  {
+    "query": "Explain the difference between HTTP 401 and 403 without editing project files.",
+    "should_trigger": false
+  },
+  {
+    "query": "Update only the TypeDoc dependency in package.json and the lockfile; no documentation diagnostics or API changes.",
+    "should_trigger": false
+  },
+  {
+    "query": "Check the OpenAPI YAML for missing endpoint descriptions. Do not change JavaScript/TypeScript sources or code comments.",
+    "should_trigger": false
+  }
+]
