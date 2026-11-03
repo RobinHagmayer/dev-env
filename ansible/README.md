@@ -131,7 +131,7 @@ Install pinned GitHub CLI and the pinned `gh stack` extension. The CLI comes fro
 uv run ansible-playbook playbooks/gh.yml --ask-become-pass
 ```
 
-The `gh` role installs the exact `gh_version` in `roles/gh/defaults/main.yml` (currently `2.103.2`) and puts the package on apt hold, preventing `apt upgrade` and unattended upgrades from changing it. To update or downgrade, deliberately change that pin and rerun the playbook. If the installed package already matches, the role skips the package installation even if the repository has dropped that version. An unavailable new pin fails instead of falling back to latest. The repository signing key is SHA256-verified and scoped to this repository; update its checksum deliberately if GitHub rotates the key. All installation tasks require sudo and are tagged `packages`. Authentication (`gh auth login`) is a separate manual step; no credentials are managed.
+The `gh` role installs the exact `gh_version` in `roles/gh/defaults/main.yml` (currently `2.103.3`) and puts the package on apt hold, preventing `apt upgrade` and unattended upgrades from changing it. To update or downgrade, deliberately change that pin and rerun the playbook. If the installed package already matches, the role skips the package installation even if the repository has dropped that version. An unavailable new pin fails instead of falling back to latest. The repository signing key is SHA256-verified and scoped to this repository; update its checksum deliberately if GitHub rotates the key. All installation tasks require sudo and are tagged `packages`. Authentication (`gh auth login`) is a separate manual step; no credentials are managed.
 
 Install Fish shell from the [official Ubuntu Fish 4 PPA](https://launchpad.net/~fish-shell/+archive/ubuntu/release-4):
 
@@ -245,7 +245,7 @@ uv run ansible-playbook playbooks/gcloud.yml --ask-become-pass
 uv run ansible-playbook playbooks/user-tools.yml --tags gcloud
 ```
 
-The `gcloud` role pins `google-cloud-cli` to `590.0.0-0` and holds the package
+The `gcloud` role pins `google-cloud-cli` to `591.0.0-0` and holds the package
 against apt/unattended upgrades. Change `gcloud_version` in
 `roles/gcloud/defaults/main.yml`, then rerun provisioning to upgrade or downgrade.
 An unavailable pin fails rather than falling back to latest. Google retains
