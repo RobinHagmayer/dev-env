@@ -19,23 +19,8 @@ path = "~/.agents/skills/tldraw-offline"
 source = "local"
 note = "No GitHub reference"
 
-[skills.claude-prompt-review]
-path = "~/.agents/skills/claude-prompt-review"
-source = "local"
-note = "No GitHub reference"
-
-[skills.logging-best-practices]
-path = "~/.agents/skills/logging-best-practices"
-source = "local"
-note = "No GitHub reference"
-
 [skills.scoped-commits]
 path = "~/.agents/skills/scoped-commits"
-source = "local"
-note = "No GitHub reference"
-
-[skills.writing-claude-prompts]
-path = "~/.agents/skills/writing-claude-prompts"
 source = "local"
 note = "No GitHub reference"
 
