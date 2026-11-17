@@ -157,6 +157,8 @@ uv run ansible-playbook playbooks/ghostty.yml --ask-become-pass
 
 The default is Ghostty 1.3.1 with its saved SHA256 checksum. Floating `tip` builds are rejected. Reruns rebuild only when source/build settings change or the binary is missing. Old source/cache directories are retained. When building `gtk4-layer-shell` from source, the role uses `patchelf` to add `$ORIGIN/../lib` to Ghostty's library search path; this repair also runs when no rebuild is needed.
 
+The role also replaces bare `ghostty` executable names in the installed desktop, D-Bus and systemd activation files with the absolute path under `ghostty_prefix`, then reloads the systemd user manager when these files change. This avoids GUI launch failures when systemd cannot find `~/.local/bin/ghostty`. The repair runs independently of rebuilding, so upgrades regenerate and then normalize the launchers. To repair only the launchers on an existing installation, run `uv run ansible-playbook playbooks/ghostty.yml --tags ghostty-launchers`.
+
 Ghostty uses its version-specific Zig executable under `~/.local/opt/zig-<version>/zig`. Its Zig dependency does not change `~/.local/bin/zig`, so running `dev-tools.yml` and `ghostty.yml` cannot fight over that link. Update `ghostty_version`, `ghostty_sha256`, and the required Zig version/checksum together, checking the source's `build.zig.zon` and [build documentation](https://ghostty.org/docs/install/build).
 
 Build Neovim from source and install it as a DEB package (so `dpkg`/`apt remove neovim` removes it cleanly):

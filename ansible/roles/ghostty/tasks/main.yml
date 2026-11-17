@@ -107,6 +107,21 @@
         dest: "{{ ghostty_prefix }}/.ghostty-build"
         mode: "0644"
 
+# Upstream launchers use a bare executable name, which systemd cannot resolve
+# under a user-local prefix. Keep this outside the build block to repair
+# existing installs too, including releases without -Dinstalled-exe-path.
+- name: Use the installed Ghostty path in desktop activation files
+  ansible.builtin.replace:
+    path: "{{ ghostty_prefix }}/share/{{ item }}"
+    regexp: '^(ExecStart|Exec|TryExec)=ghostty(?=\s|$)'
+    replace: '\g<1>={{ ghostty_prefix }}/bin/ghostty'
+  loop:
+    - applications/com.mitchellh.ghostty.desktop
+    - dbus-1/services/com.mitchellh.ghostty.service
+    - systemd/user/app-com.mitchellh.ghostty.service
+  notify: Reload Ghostty user service definitions
+  tags: [ghostty-launchers]
+
 # Keep this outside the build block so reruns also repair existing installs.
 - name: Ensure Ghostty can find the bundled GTK layer shell library
   when:
